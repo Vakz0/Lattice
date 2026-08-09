@@ -6,6 +6,10 @@ import type {
 import { CATEGORY_LABELS, EDITABLE_CATEGORIES } from './format'
 
 function contextLine(current: NonNullable<ActivityDaySummary['current']>): string | null {
+  // When the primary label is already the domain, show the browser as secondary.
+  if (current.domain && current.contextKind === 'browser') {
+    return current.app
+  }
   if (current.domain) return current.domain
   if (current.projectName && current.fileName) {
     return `${current.fileName} · ${current.projectName}`
@@ -13,6 +17,12 @@ function contextLine(current: NonNullable<ActivityDaySummary['current']>): strin
   if (current.projectName) return current.projectName
   if (current.fileName) return current.fileName
   return null
+}
+
+function primaryLabel(current: NonNullable<ActivityDaySummary['current']>): string {
+  if (current.ignored) return 'Lattice'
+  if (current.contextKind === 'browser' && current.domain) return current.domain
+  return current.app
 }
 
 type ActivityNowCardProps = {
@@ -33,8 +43,8 @@ export function ActivityNowCard({ current, busy, onCorrect }: ActivityNowCardPro
       <div className="activity-section-title">Maintenant</div>
       <div className="activity-now-card">
         <div className="activity-now-main">
-          <span className="activity-now-app" title={current.app}>
-            {current.ignored ? 'Lattice' : current.app}
+          <span className="activity-now-app" title={primaryLabel(current)}>
+            {primaryLabel(current)}
           </span>
           {current.ignored ? (
             <span className="activity-now-context">
@@ -70,12 +80,12 @@ export function ActivityNowCard({ current, busy, onCorrect }: ActivityNowCardPro
                 disabled={busy}
                 value={current.category}
                 onChange={(e) => {
-                  void onCorrect(
-                    current.app,
-                    e.target.value as ActivityCategory,
-                    'app',
-                    current.title,
-                  )
+                  const next = e.target.value as ActivityCategory
+                  if (current.domain) {
+                    void onCorrect(current.app, next, 'domain', current.title, current.domain)
+                  } else {
+                    void onCorrect(current.app, next, 'app', current.title)
+                  }
                 }}
               >
                 {EDITABLE_CATEGORIES.map((c) => (

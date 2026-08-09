@@ -111,13 +111,17 @@ Context:
 ### Classification
 
 1. idle → AFK  
-2. `userAppOverrides`  
-3. **domain** (`userDomainOverrides` then built-in table: `youtube.com` → entertainment, `github.com` → work, …)  
-4. title patterns  
-5. app defaults  
-6. `other`
+2. **browser + domain** → domain rules (`userDomainOverrides` then built-in: `youtube.com` → entertainment, `github.com` → work, …) — wins over a Brave/Chrome app override  
+3. `userAppOverrides` (non-browser apps, or browsers with no domain)  
+4. **domain** (non-browser contexts)  
+5. title patterns  
+6. app defaults  
+7. `other`
+
+When the media extension reports playback and the URL helper misses (e.g. fullscreen), the playing tab origin is used as `domain`.
 
 `ignored` segments and AFK are excluded from active totals and tops.
+Browser segments with a known `domain` appear under **Top sites**, not **Top apps** (so “brave” is not the quota bucket).
 
 If `active-url.exe` is missing, the domain is inferred from the window title (fallback).
 

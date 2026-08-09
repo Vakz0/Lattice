@@ -116,15 +116,20 @@ export function buildSummary(
     if (seg.ignored) continue
     totalMs += ms
     byCategory[seg.category] = (byCategory[seg.category] ?? 0) + ms
-    const prev = appMs.get(seg.app) ?? {
-      ms: 0,
-      category: seg.category,
-      confidence: seg.confidence ?? 'medium',
+    // Browser time with a known site counts under the domain (Top sites), not "brave".
+    const skipAppBucket =
+      seg.contextKind === 'browser' && Boolean(seg.domain)
+    if (!skipAppBucket) {
+      const prev = appMs.get(seg.app) ?? {
+        ms: 0,
+        category: seg.category,
+        confidence: seg.confidence ?? 'medium',
+      }
+      prev.ms += ms
+      prev.category = seg.category
+      prev.confidence = seg.confidence ?? prev.confidence
+      appMs.set(seg.app, prev)
     }
-    prev.ms += ms
-    prev.category = seg.category
-    prev.confidence = seg.confidence ?? prev.confidence
-    appMs.set(seg.app, prev)
 
     if (seg.domain) {
       const s = siteMs.get(seg.domain) ?? { ms: 0, category: seg.category }

@@ -30,7 +30,7 @@ import {
   getFocusAttribution,
   hasFocusSession,
 } from '../focus'
-import { isMediaKeepAwakeActive } from './mediaBridge'
+import { getMediaPlaybackDomain, isMediaKeepAwakeActive } from './mediaBridge'
 import { classify, isIgnoredApp, type ClassifyResult } from './classifier'
 import { DEFAULT_RULES, FLUSH_EVERY_POLLS, FOCUS_DWELL_MS } from './defaults'
 import { normalizeAppKey } from './normalize'
@@ -233,6 +233,10 @@ async function resolvePollSample(now: Date): Promise<PollSample> {
         domain = fromTitle.domain
         guardUrlPath = fromTitle.urlPath
         urlPath = settings.browserDetail === 'url' ? fromTitle.urlPath : null
+      }
+      // Extension media bridge: when UIA/title miss (fullscreen video…), use playing origin.
+      if (!domain) {
+        domain = getMediaPlaybackDomain()
       }
       contextKind = 'browser'
     } else {

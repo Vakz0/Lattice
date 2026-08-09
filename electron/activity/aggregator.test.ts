@@ -61,6 +61,35 @@ describe('buildSummary', () => {
     expect(summary.byCategory.afk).toBe(60_000)
     expect(summary.topApps[0]?.app).toBe('cursor')
   })
+
+  it('attributes browser+domain time to topSites, not topApps', () => {
+    const segments = [
+      seg({
+        app: 'brave',
+        category: 'entertainment',
+        domain: 'youtube.com',
+        contextKind: 'browser',
+        categorySource: 'domain',
+      }),
+      seg({
+        app: 'brave',
+        category: 'other',
+        domain: null,
+        contextKind: 'browser',
+        start: '2026-07-31T10:01:00.000Z',
+        end: '2026-07-31T10:02:00.000Z',
+      }),
+    ]
+    const summary = buildSummary('2026-07-31', segments, null, deps)
+    expect(summary.byCategory.entertainment).toBe(60_000)
+    expect(summary.topSites[0]).toEqual({
+      domain: 'youtube.com',
+      ms: 60_000,
+      category: 'entertainment',
+    })
+    expect(summary.topApps.map((a) => a.app)).toEqual(['brave'])
+    expect(summary.topApps[0]?.ms).toBe(60_000)
+  })
 })
 
 describe('buildTransitions', () => {

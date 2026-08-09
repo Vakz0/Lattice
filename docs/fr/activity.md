@@ -111,13 +111,17 @@ Contexte :
 ### Classification
 
 1. idle → AFK  
-2. `userAppOverrides`  
-3. **domaine** (`userDomainOverrides` puis table intégrée : `youtube.com` → divertissement, `github.com` → travail, …)  
-4. motifs titre  
-5. défauts d’app  
-6. `other`
+2. **navigateur + domaine** → règles domaine (`userDomainOverrides` puis table : `youtube.com` → divertissement, `github.com` → travail, …) — prioritaire sur un override d’app Brave/Chrome  
+3. `userAppOverrides` (apps hors navigateur, ou navigateur sans domaine)  
+4. **domaine** (contextes hors navigateur)  
+5. motifs titre  
+6. défauts d’app  
+7. `other`
+
+Si l’extension média signale une lecture et que le helper URL rate (ex. plein écran), l’origine de l’onglet en lecture sert de `domain`.
 
 Les segments `ignored` et AFK sont exclus des totaux actifs et des tops.
+Les segments navigateur avec un `domain` connu vont dans **Top sites**, pas **Top apps** (Brave n’est plus le seau de quota).
 
 Si `active-url.exe` est absent, le domaine est déduit du titre de fenêtre (fallback).
 

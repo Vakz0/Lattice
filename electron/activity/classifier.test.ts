@@ -15,12 +15,33 @@ describe('classify', () => {
     expect(r.source).toBe('idle')
   })
 
-  it('prioritizes user app overrides over domain', () => {
+  it('prioritizes domain over user app overrides for browsers', () => {
     const rules = {
       ...DEFAULT_RULES,
-      userAppOverrides: { chrome: 'work' as const },
+      userAppOverrides: { brave: 'work' as const, chrome: 'work' as const },
     }
-    const r = classify('chrome', 'YouTube', false, 'youtube.com', rules, compiled)
+    const r = classify('brave', 'YouTube', false, 'youtube.com', rules, compiled)
+    expect(r.category).toBe('entertainment')
+    expect(r.source).toBe('domain')
+  })
+
+  it('still applies user app overrides for non-browser apps over domain', () => {
+    const rules = {
+      ...DEFAULT_RULES,
+      userAppOverrides: { slack: 'work' as const },
+    }
+    // Slack is not a browser; app override wins even if a domain sneaks in.
+    const r = classify('slack', 'channel', false, 'slack.com', rules, compiled)
+    expect(r.category).toBe('work')
+    expect(r.source).toBe('user')
+  })
+
+  it('applies browser app overrides when domain is unknown', () => {
+    const rules = {
+      ...DEFAULT_RULES,
+      userAppOverrides: { brave: 'work' as const },
+    }
+    const r = classify('brave', 'New Tab', false, null, rules, compiled)
     expect(r.category).toBe('work')
     expect(r.source).toBe('user')
   })

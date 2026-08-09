@@ -4,7 +4,7 @@ import type {
   ActivityConfidence,
   ActivityRules,
 } from '../../shared/types'
-import { categoryFromDomain } from './context'
+import { BROWSER_APPS, categoryFromDomain } from './context'
 import { normalizeAppKey } from './normalize'
 
 export type ClassifyResult = {
@@ -60,6 +60,20 @@ export function classify(
 
   const key = normalizeAppKey(app)
   const titleLower = (title ?? '').toLowerCase()
+  const isBrowser = BROWSER_APPS.has(key)
+
+  // Browsers: site/video domain must win over an app override on chrome/brave/…
+  // otherwise correcting "Brave" once poisons every tab's work/entertainment quota.
+  const fromDomain = categoryFromDomain(domain, rules.userDomainOverrides)
+  if (isBrowser && fromDomain) {
+    return {
+      category: fromDomain.category,
+      source: rules.userDomainOverrides?.[fromDomain.matched] ? 'user' : 'domain',
+      matchedPattern: fromDomain.matched,
+      confidence: 'high',
+    }
+  }
+
   const userHit = rules.userAppOverrides?.[key]
   if (userHit) {
     return {
@@ -70,7 +84,6 @@ export function classify(
     }
   }
 
-  const fromDomain = categoryFromDomain(domain, rules.userDomainOverrides)
   if (fromDomain) {
     return {
       category: fromDomain.category,

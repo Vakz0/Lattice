@@ -162,6 +162,18 @@ export function isMediaKeepAwakeActive(): boolean {
   return snapshot().playing
 }
 
+/** Domain of the currently playing media tab (extension heartbeat), if any. */
+export function getMediaPlaybackDomain(): string | null {
+  const { playing, origin } = snapshot()
+  if (!playing || !origin) return null
+  try {
+    const raw = origin.includes('://') ? origin : `https://${origin}`
+    return normalizeDomain(new URL(raw).hostname) || null
+  } catch {
+    return normalizeDomain(origin) || null
+  }
+}
+
 function loadWatchMapFromDisk(date: string): Record<string, number> {
   const file = assertWithin(daysDir(), watchPath(date))
   try {

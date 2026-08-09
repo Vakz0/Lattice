@@ -2,6 +2,10 @@
 
 Append dated notes. Promote durable rules to `.cursor/rules/` / `docs/*/decisions.md`.
 
+## 2026-08-09
+
+- Browser quotas (work/entertainment): classify by **site/video domain**, not the browser process. For `BROWSER_APPS`, domain beats `userAppOverrides` on brave/chrome; Now-card corrections with a domain use scope `domain`; Top apps skips browser+domain (Top sites owns that time); media bridge origin fills domain when UIA/title miss.
+
 ## 2026-08-04
 
 - Documentation debt audit: architecture pages were deleted in `76e0317` (“slim down docs”); restored as a short decisions log + agent constitution instead of a long architecture doc.
