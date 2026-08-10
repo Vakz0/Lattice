@@ -3,6 +3,7 @@ import type { ActivityCategory, ActivitySegment } from '../../shared/types'
 export function emptyByCategory(): Record<ActivityCategory, number> {
   return {
     work: 0,
+    studies: 0,
     entertainment: 0,
     communication: 0,
     system: 0,

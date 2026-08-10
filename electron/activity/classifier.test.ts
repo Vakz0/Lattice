@@ -52,6 +52,12 @@ describe('classify', () => {
     expect(r.source).toBe('domain')
   })
 
+  it('classifies study domains as studies', () => {
+    const r = classify('brave', 'Khan', false, 'khanacademy.org', DEFAULT_RULES, compiled)
+    expect(r.category).toBe('studies')
+    expect(r.source).toBe('domain')
+  })
+
   it('uses title patterns before app defaults', () => {
     const r = classify('unknownapp', 'watching netflix tonight', false, null, DEFAULT_RULES, compiled)
     expect(r.category).toBe('entertainment')

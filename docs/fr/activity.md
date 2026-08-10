@@ -13,11 +13,23 @@ Widget Lattice de suivi du temps passé sur le PC, avec **contexte logiciel** (d
 - Classification : domaine → règles titre → app → Autre
 - Correction manuelle → `feedback.jsonl` + règles (apps, titres, **domaines**)
 - Widget : résumé, top apps / **sites** / **projets** / **tâches Notion**, maintenant, **historique jour par jour**
-- Options : pause, Web, titres, parse IDE, seuil AFK, délai interruption focus
+- Options : pause, toggle **AFK manuel**, Web, titres, parse IDE, seuil AFK auto (défaut **60 s**), délai interruption focus
+- Catégories : travail, **études**, divertissement, communication, système, autre, afk
+- Correction manuelle → `feedback.jsonl` + règles (apps, titres, **domaines**) ; les segments du jour sont reclassifiés pour que l’UI se mette à jour tout de suite
+- Widget : résumé, top apps / **sites** / **projets** / **tâches Notion**, maintenant, **historique jour par jour**
 - **Sessions focus Notion** : imputer le temps à une tâche + garde-fou allowlist (voir ci-dessous)
-- **Extension navigateur** (optionnelle) : lecture média → pas d’AFK + **temps de visionnage** par site (`extensions/lattice-media`)
+- **Extension navigateur** (optionnelle) : lecture média → pas d’AFK auto + **temps de visionnage** par site (`extensions/lattice-media`)
 - Export CSV / JSON enrichi (segments + journal focus)
 - Bouton **Effacer…** : supprime l’historique (`days/`), le feedback et le journal focus ; conserve `rules.json` / settings
+
+## AFK
+
+| Mode | Comportement |
+| --- | --- |
+| **Auto** | Idle OS ≥ `idleThresholdSec` (défaut 60 s), sauf si l’extension média signale une lecture |
+| **Manuel** | Options → bouton **AFK** (`manualAfk`) — force AFK jusqu’au prochain clic, ignore souris/clavier et keep-awake média |
+
+Badge **AFK manuel** dans l’en-tête du widget quand forcé.
 
 ## Ce qui n’est pas compté
 
@@ -111,7 +123,7 @@ Contexte :
 ### Classification
 
 1. idle → AFK  
-2. **navigateur + domaine** → règles domaine (`userDomainOverrides` puis table : `youtube.com` → divertissement, `github.com` → travail, …) — prioritaire sur un override d’app Brave/Chrome  
+2. **navigateur + domaine** → règles domaine (`userDomainOverrides` puis table : `youtube.com` → divertissement, `github.com` → travail, `khanacademy.org` → études, `*.edu` → études, …) — prioritaire sur un override d’app Brave/Chrome  
 3. `userAppOverrides` (apps hors navigateur, ou navigateur sans domaine)  
 4. **domaine** (contextes hors navigateur)  
 5. motifs titre  
@@ -119,6 +131,8 @@ Contexte :
 7. `other`
 
 Si l’extension média signale une lecture et que le helper URL rate (ex. plein écran), l’origine de l’onglet en lecture sert de `domain`.
+
+Les résumés appliquent les **règles courantes** aux catégories (et une correction réécrit le JSONL du jour) pour que Top apps / sites / barres se mettent à jour immédiatement.
 
 Les segments `ignored` et AFK sont exclus des totaux actifs et des tops.
 Les segments navigateur avec un `domain` connu vont dans **Top sites**, pas **Top apps** (Brave n’est plus le seau de quota).
@@ -135,4 +149,4 @@ Systray → **Catalogue** → **Activité**. Rebuild helpers : `npm run build:he
 - Win32 focus via `koffi` ; URL via `tools/active-url` (WPF UI Automation)
 - Détection Lattice : HWND des `BrowserWindow` + chemin exe / `ignoredApps`
 - Dwell focus : `FOCUS_DWELL_MS = 3000`
-- Idle via `powerMonitor.getSystemIdleTime()`
+- Idle via `powerMonitor.getSystemIdleTime()` ; option `manualAfk`

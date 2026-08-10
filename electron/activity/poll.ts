@@ -183,8 +183,10 @@ async function resolvePollSample(now: Date): Promise<PollSample> {
     idleSec = 0
   }
   // Extension media bridge: active playback suppresses AFK despite system idle.
+  // Manual AFK forces idle regardless of input or media.
   const systemIdle = idleSec >= settings.idleThresholdSec
-  const idle = systemIdle && !isMediaKeepAwakeActive()
+  const idle =
+    settings.manualAfk || (systemIdle && !isMediaKeepAwakeActive())
 
   let app = 'unknown'
   let rawTitle = ''

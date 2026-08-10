@@ -37,6 +37,7 @@ export function ActivityWidget() {
     setStatus,
     goDay,
     togglePause,
+    toggleManualAfk,
     toggleStoreTitles,
     toggleParseIde,
     setIdleThreshold,
@@ -50,6 +51,8 @@ export function ActivityWidget() {
     focusStop,
     saveAllowlist,
   } = useActivityWidget()
+
+  const manualAfk = settings?.manualAfk ?? data.manualAfk ?? false
 
   return (
     <div className="widget-shell activity-shell drag-region">
@@ -79,10 +82,17 @@ export function ActivityWidget() {
           </div>
         </div>
         <div className="activity-header-meta no-drag">
-          {data.mediaKeepAwake ? (
+          {manualAfk ? (
+            <span
+              className="activity-media-badge activity-afk-badge"
+              title="AFK forcé manuellement — le suivi reprend au prochain clic AFK"
+            >
+              AFK manuel
+            </span>
+          ) : data.mediaKeepAwake ? (
             <span
               className="activity-media-badge"
-              title="Lecture média signalée par l’extension — AFK suspendu"
+              title="Lecture média signalée par l’extension — AFK auto suspendu"
             >
               Média
             </span>
@@ -152,6 +162,7 @@ export function ActivityWidget() {
       <ActivityOptionsFooter
         busy={busy}
         paused={data.paused}
+        manualAfk={manualAfk}
         settings={settings}
         optionsOpen={optionsOpen}
         confirmClear={confirmClear}
@@ -174,6 +185,7 @@ export function ActivityWidget() {
           setStatus(null)
         }}
         onTogglePause={() => void togglePause()}
+        onToggleManualAfk={() => void toggleManualAfk()}
         onCycleBrowserDetail={() => void cycleBrowserDetail()}
         onToggleStoreTitles={() => void toggleStoreTitles()}
         onToggleParseIde={() => void toggleParseIde()}

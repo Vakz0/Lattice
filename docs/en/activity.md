@@ -13,11 +13,23 @@ Local time-tracking for Lattice with **structured software context** (browser do
 - Classification: domain → title rules → app → Other
 - Manual corrections → `feedback.jsonl` + rules (apps, titles, **domains**)
 - Widget: summary, top apps / **sites** / **projects** / **Notion tasks**, now, **day-by-day history**
-- Options: pause, Web, titles, IDE parse, AFK threshold, focus interrupt delay
+- Options: pause, **manual AFK** toggle, Web, titles, IDE parse, AFK auto threshold (default **60 s**), focus interrupt delay
+- Categories: work, **studies**, entertainment, communication, system, other, afk
+- Manual corrections → `feedback.jsonl` + rules (apps, titles, **domains**); day segments are reclassified so the UI updates immediately
+- Widget: summary, top apps / **sites** / **projects** / **Notion tasks**, now, **day-by-day history**
 - **Notion focus sessions**: attribute time to a task + allowlist guard (see below)
-- **Optional browser extension**: media playback → no AFK + **watch time** per site (`extensions/lattice-media`)
+- **Optional browser extension**: media playback → no auto-AFK + **watch time** per site (`extensions/lattice-media`)
 - Enriched CSV / JSON export (segments + focus journal)
 - **Clear…** button: deletes history (`days/`), feedback and focus journal; keeps `rules.json` / settings
+
+## AFK
+
+| Mode | Behavior |
+| --- | --- |
+| **Auto** | `powerMonitor` idle ≥ `idleThresholdSec` (default 60 s), unless the media extension reports playback |
+| **Manual** | Options → **AFK** toggle (`manualAfk` in settings) — forces AFK until toggled off, ignoring mouse/keyboard and media keep-awake |
+
+Badge **AFK manuel** in the widget header when forced.
 
 ## What is not counted
 
@@ -111,7 +123,7 @@ Context:
 ### Classification
 
 1. idle → AFK  
-2. **browser + domain** → domain rules (`userDomainOverrides` then built-in: `youtube.com` → entertainment, `github.com` → work, …) — wins over a Brave/Chrome app override  
+2. **browser + domain** → domain rules (`userDomainOverrides` then built-in: `youtube.com` → entertainment, `github.com` → work, `khanacademy.org` → studies, `*.edu` → studies, …) — wins over a Brave/Chrome app override  
 3. `userAppOverrides` (non-browser apps, or browsers with no domain)  
 4. **domain** (non-browser contexts)  
 5. title patterns  
@@ -119,6 +131,8 @@ Context:
 7. `other`
 
 When the media extension reports playback and the URL helper misses (e.g. fullscreen), the playing tab origin is used as `domain`.
+
+Summaries apply **current rules** to segment categories (and corrections rewrite today’s JSONL) so Top apps / sites / bars update immediately after a change.
 
 `ignored` segments and AFK are excluded from active totals and tops.
 Browser segments with a known `domain` appear under **Top sites**, not **Top apps** (so “brave” is not the quota bucket).
@@ -135,4 +149,4 @@ Systray → **Catalog** → **Activity**. Rebuild helpers: `npm run build:helper
 - Win32 focus via `koffi`; URL via `tools/active-url` (WPF UI Automation)
 - Lattice detection: `BrowserWindow` HWND + exe path / `ignoredApps`
 - Focus dwell: `FOCUS_DWELL_MS = 3000`
-- Idle via `powerMonitor.getSystemIdleTime()`
+- Idle via `powerMonitor.getSystemIdleTime()`; optional `manualAfk`

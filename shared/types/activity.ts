@@ -7,6 +7,7 @@ export type WidgetKind = string
 
 export type ActivityCategory =
   | 'work'
+  | 'studies'
   | 'entertainment'
   | 'communication'
   | 'system'
@@ -123,8 +124,10 @@ export interface ActivityDaySummary {
   current: ActivityCurrentFocus | null
   /** False si le binaire active-url.exe est introuvable. */
   urlHelperAvailable: boolean
-  /** True si l’extension média signale une lecture active (bloque l’AFK). */
+  /** True si l’extension média signale une lecture active (bloque l’AFK auto). */
   mediaKeepAwake: boolean
+  /** True si l’utilisateur a forcé AFK via le bouton manuel. */
+  manualAfk: boolean
   /** Temps de visionnage (extension, lecture réelle) par domaine. */
   topWatch: ActivitySiteBreakdown[]
   /** Session focus Notion en cours (null si aucune). */
@@ -138,6 +141,8 @@ export interface ActivitySettings {
   /** Si false, seuls les noms d’apps sont stockés (pas les titres). */
   storeTitles: boolean
   idleThresholdSec: number
+  /** Force AFK until toggled off (ignores mouse/keyboard and media keep-awake). */
+  manualAfk: boolean
   /** Détail navigateur : domaine seul (défaut), URL complète, ou désactivé. */
   browserDetail: ActivityBrowserDetail
   /** Parser les titres Cursor / VS Code / Slack. */

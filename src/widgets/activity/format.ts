@@ -6,6 +6,7 @@ export { todayKey, shiftDate, errMessage }
 
 export const CATEGORY_ORDER: ActivityCategory[] = [
   'work',
+  'studies',
   'entertainment',
   'communication',
   'system',
@@ -15,6 +16,7 @@ export const CATEGORY_ORDER: ActivityCategory[] = [
 
 export const EDITABLE_CATEGORIES: ActivityCategory[] = [
   'work',
+  'studies',
   'entertainment',
   'communication',
   'system',
@@ -23,6 +25,7 @@ export const EDITABLE_CATEGORIES: ActivityCategory[] = [
 
 export const CATEGORY_LABELS: Record<ActivityCategory, string> = {
   work: 'Travail',
+  studies: 'Études',
   entertainment: 'Divertissement',
   communication: 'Communication',
   system: 'Système',
@@ -71,6 +74,7 @@ export function emptySummary(date = todayKey()): ActivityDaySummary {
     totalMs: 0,
     byCategory: {
       work: 0,
+      studies: 0,
       entertainment: 0,
       communication: 0,
       system: 0,
@@ -91,6 +95,7 @@ export function emptySummary(date = todayKey()): ActivityDaySummary {
     current: null,
     urlHelperAvailable: true,
     mediaKeepAwake: false,
+    manualAfk: false,
     topWatch: [],
     focusSession: null,
     topTasks: [],

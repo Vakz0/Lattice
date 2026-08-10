@@ -70,11 +70,16 @@ export function useActivityWidget() {
       }
       setSettings((prev) =>
         prev
-          ? { ...prev, paused: s.paused }
+          ? {
+              ...prev,
+              paused: s.paused,
+              manualAfk: s.manualAfk ?? prev.manualAfk,
+            }
           : {
               paused: s.paused,
               storeTitles: true,
-              idleThresholdSec: 180,
+              idleThresholdSec: 60,
+              manualAfk: s.manualAfk ?? false,
               browserDetail: 'domain',
               parseIdeTitles: true,
               focusOffProjectDwellSec: 8,
@@ -114,7 +119,13 @@ export function useActivityWidget() {
       id,
       label: CATEGORY_LABELS[id],
       ms: data.byCategory[id] ?? 0,
-    })).filter((row) => row.ms > 0 || row.id === 'work' || row.id === 'entertainment')
+    })).filter(
+      (row) =>
+        row.ms > 0 ||
+        row.id === 'work' ||
+        row.id === 'studies' ||
+        row.id === 'entertainment',
+    )
   }, [data])
 
   const qualityHint = useMemo(() => {
@@ -154,6 +165,14 @@ export function useActivityWidget() {
 
   async function togglePause() {
     await patchSettings({ paused: !data.paused })
+  }
+
+  async function toggleManualAfk() {
+    const next = !(settings?.manualAfk ?? false)
+    await patchSettings(
+      { manualAfk: next },
+      next ? 'AFK manuel activé.' : 'AFK manuel désactivé.',
+    )
   }
 
   async function toggleStoreTitles() {
@@ -333,6 +352,7 @@ export function useActivityWidget() {
     setStatus,
     goDay,
     togglePause,
+    toggleManualAfk,
     toggleStoreTitles,
     toggleParseIde,
     setIdleThreshold,

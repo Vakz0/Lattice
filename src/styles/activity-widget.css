@@ -87,6 +87,12 @@
   padding: 4px 9px;
 }
 
+.activity-afk-badge {
+  color: rgba(255, 220, 180, 0.95);
+  background: rgba(180, 120, 60, 0.22);
+  border-color: rgba(180, 120, 60, 0.4);
+}
+
 .activity-live {
   display: inline-flex;
   align-items: center;
@@ -322,6 +328,10 @@
 
 .cat-work .activity-cat-fill {
   background: #6fbf8f;
+}
+
+.cat-studies .activity-cat-fill {
+  background: #7a9bb8;
 }
 
 .cat-entertainment .activity-cat-fill {

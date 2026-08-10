@@ -42,6 +42,7 @@ import {
 } from './poll'
 import {
   clearStorageCaches,
+  getCompiledTitlePatterns,
   getRules,
   getSettings,
   loadActivityState,
@@ -77,6 +78,8 @@ function summaryDeps(): SummaryDeps {
   return {
     settings: getSettings(),
     running,
+    rules: getRules(),
+    compiledTitlePatterns: getCompiledTitlePatterns(),
     userDomainOverrides: getRules().userDomainOverrides,
     countFeedbackOnDay,
     getTopWatch,
@@ -90,9 +93,12 @@ async function emitSummary(): Promise<void> {
   const key = todayKey()
   await warmFeedbackCount(key)
   const pending = getPendingSwitch()?.segment ?? null
+  const deps = summaryDeps()
   lastSummary = withPendingCurrent(
-    buildSummary(key, await readDaySegments(key), liveOpenSegment(), summaryDeps()),
+    buildSummary(key, await readDaySegments(key), liveOpenSegment(), deps),
     pending,
+    deps.rules,
+    deps.compiledTitlePatterns,
   )
   onUpdated?.(lastSummary)
 }
@@ -205,6 +211,9 @@ export async function updateActivitySettings(patch: Partial<ActivitySettings>): 
   if (typeof patch.storeTitles === 'boolean') settings.storeTitles = patch.storeTitles
   if (typeof patch.idleThresholdSec === 'number' && patch.idleThresholdSec >= 30) {
     settings.idleThresholdSec = Math.round(patch.idleThresholdSec)
+  }
+  if (typeof patch.manualAfk === 'boolean') {
+    settings.manualAfk = patch.manualAfk
   }
   if (
     patch.browserDetail === 'domain' ||

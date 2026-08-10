@@ -4,6 +4,7 @@ import { AFK_PRESETS } from './format'
 type ActivityOptionsFooterProps = {
   busy: boolean
   paused: boolean
+  manualAfk: boolean
   settings: ActivitySettings | null
   optionsOpen: boolean
   confirmClear: boolean
@@ -16,6 +17,7 @@ type ActivityOptionsFooterProps = {
   onClear: () => void
   onCancelClear: () => void
   onTogglePause: () => void
+  onToggleManualAfk: () => void
   onCycleBrowserDetail: () => void
   onToggleStoreTitles: () => void
   onToggleParseIde: () => void
@@ -27,6 +29,7 @@ type ActivityOptionsFooterProps = {
 export function ActivityOptionsFooter({
   busy,
   paused,
+  manualAfk,
   settings,
   optionsOpen,
   confirmClear,
@@ -39,6 +42,7 @@ export function ActivityOptionsFooter({
   onClear,
   onCancelClear,
   onTogglePause,
+  onToggleManualAfk,
   onCycleBrowserDetail,
   onToggleStoreTitles,
   onToggleParseIde,
@@ -126,6 +130,15 @@ export function ActivityOptionsFooter({
           </button>
           <button
             type="button"
+            className={`activity-btn${manualAfk ? '' : ' activity-btn-ghost'}`}
+            disabled={busy || !settings}
+            onClick={() => void onToggleManualAfk()}
+            title="Forcer AFK jusqu’au prochain clic (ignore souris, clavier et média)"
+          >
+            {manualAfk ? 'AFK on' : 'AFK'}
+          </button>
+          <button
+            type="button"
             className="activity-btn activity-btn-ghost"
             disabled={busy || !settings}
             onClick={() => void onCycleBrowserDetail()}
@@ -157,12 +170,12 @@ export function ActivityOptionsFooter({
             {settings?.parseIdeTitles ? 'IDE on' : 'IDE off'}
           </button>
           <label className="activity-afk-label">
-            <span>AFK</span>
+            <span>Seuil</span>
             <select
               className="activity-select activity-select-compact"
               disabled={busy || !settings}
-              value={settings?.idleThresholdSec ?? 180}
-              aria-label="Seuil AFK"
+              value={settings?.idleThresholdSec ?? 60}
+              aria-label="Seuil AFK auto"
               onChange={(e) => {
                 void onSetIdleThreshold(Number(e.target.value))
               }}

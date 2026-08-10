@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivitySegment } from '../../shared/types'
 import { buildSummary, buildTransitions } from './aggregator'
-import { DEFAULT_SETTINGS } from './defaults'
+import { rebuildCompiledPatterns } from './classifier'
+import { DEFAULT_RULES, DEFAULT_SETTINGS } from './defaults'
 
 function seg(partial: Partial<ActivitySegment> & Pick<ActivitySegment, 'app' | 'category'>): ActivitySegment {
   return {
@@ -29,6 +30,8 @@ function seg(partial: Partial<ActivitySegment> & Pick<ActivitySegment, 'app' | '
 const deps = {
   settings: { ...DEFAULT_SETTINGS },
   running: true,
+  rules: DEFAULT_RULES,
+  compiledTitlePatterns: rebuildCompiledPatterns(DEFAULT_RULES),
   userDomainOverrides: null,
   countFeedbackOnDay: () => 0,
   getTopWatch: () => [],
@@ -60,6 +63,7 @@ describe('buildSummary', () => {
     expect(summary.byCategory.work).toBe(60_000)
     expect(summary.byCategory.afk).toBe(60_000)
     expect(summary.topApps[0]?.app).toBe('cursor')
+    expect(summary.manualAfk).toBe(false)
   })
 
   it('attributes browser+domain time to topSites, not topApps', () => {
@@ -89,6 +93,45 @@ describe('buildSummary', () => {
     })
     expect(summary.topApps.map((a) => a.app)).toEqual(['brave'])
     expect(summary.topApps[0]?.ms).toBe(60_000)
+  })
+
+  it('applies current rules over stored segment categories', () => {
+    const rules = {
+      ...DEFAULT_RULES,
+      userAppOverrides: { notepad: 'studies' as const },
+      appDefaults: { ...DEFAULT_RULES.appDefaults, notepad: 'studies' as const },
+    }
+    const segments = [
+      seg({
+        app: 'notepad',
+        category: 'other',
+        categorySource: 'fallback',
+        confidence: 'low',
+      }),
+    ]
+    const summary = buildSummary('2026-07-31', segments, null, {
+      ...deps,
+      rules,
+      compiledTitlePatterns: rebuildCompiledPatterns(rules),
+    })
+    expect(summary.byCategory.studies).toBe(60_000)
+    expect(summary.byCategory.other).toBe(0)
+    expect(summary.topApps[0]?.category).toBe('studies')
+  })
+
+  it('classifies study domains in topSites', () => {
+    const segments = [
+      seg({
+        app: 'brave',
+        category: 'work',
+        domain: 'khanacademy.org',
+        contextKind: 'browser',
+        categorySource: 'user',
+      }),
+    ]
+    const summary = buildSummary('2026-07-31', segments, null, deps)
+    expect(summary.byCategory.studies).toBe(60_000)
+    expect(summary.topSites[0]?.category).toBe('studies')
   })
 })
 

@@ -1,12 +1,13 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import type {
   ActivityFeedbackEntry,
   ActivityRules,
   ActivitySegment,
   ActivitySettings,
 } from '../../shared/types'
-import { rebuildCompiledPatterns, type CompiledTitlePattern } from './classifier'
+import { classify, rebuildCompiledPatterns, type CompiledTitlePattern } from './classifier'
 import { DEFAULT_RULES, DEFAULT_SETTINGS } from './defaults'
 import {
   activityDir,
@@ -15,6 +16,7 @@ import {
   daysDir,
   ensureDirs,
   feedbackPath,
+  resolveWithin,
   rulesPath,
   settingsPath,
   todayKey,
@@ -178,6 +180,56 @@ export async function readDaySegments(date: string): Promise<ActivitySegment[]> 
   dayCacheKey = date
   dayCacheSegments = out
   return out
+}
+
+/**
+ * Reclassify all non-afk / non-ignored segments for a day using current rules,
+ * then rewrite the JSONL atomically. Returns how many segments changed.
+ */
+export async function reclassifyAndRewriteDaySegments(date: string): Promise<number> {
+  const segments = await readDaySegments(date)
+  if (segments.length === 0) return 0
+
+  let changed = 0
+  const next = segments.map((seg) => {
+    if (seg.category === 'afk' || seg.ignored) return seg
+    const r = classify(
+      seg.app,
+      seg.title ?? null,
+      false,
+      seg.domain ?? null,
+      rules,
+      compiledTitlePatterns,
+    )
+    if (
+      r.category === seg.category &&
+      r.source === (seg.categorySource ?? r.source) &&
+      (r.matchedPattern ?? null) === (seg.matchedPattern ?? null)
+    ) {
+      return seg
+    }
+    changed += 1
+    return {
+      ...seg,
+      category: r.category,
+      categorySource: r.source,
+      confidence: r.confidence,
+      matchedPattern: r.matchedPattern,
+    }
+  })
+
+  if (changed === 0) return 0
+
+  ensureDirs()
+  const file = dayFile(date)
+  const target = assertWithin(daysDir(), file)
+  const tmp = resolveWithin(daysDir(), `${path.basename(file)}.${process.pid}.tmp`)
+  const body = `${next.map((s) => JSON.stringify(s)).join('\n')}\n`
+  await fsp.writeFile(tmp, body, 'utf8')
+  await fsp.rename(tmp, target)
+  dayCacheKey = date
+  dayCacheSegments = next
+  return changed
 }
 
 export async function readFeedbackEntries(): Promise<ActivityFeedbackEntry[]> {

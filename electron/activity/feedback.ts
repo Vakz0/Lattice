@@ -3,17 +3,21 @@ import type {
   ActivityCorrectionResult,
   ActivityCorrectionScope,
   ActivityDaySummary,
+  ActivitySegment,
 } from '../../shared/types'
 import { categoryFromDomain, normalizeDomain } from './context'
-import { titlePatternFromSample } from './classifier'
+import { classify, titlePatternFromSample } from './classifier'
 import { CATEGORIES } from './defaults'
 import { normalizeAppKey } from './normalize'
-import { getOpenSegment } from './poll'
+import { getOpenSegment, getPendingSwitch } from './poll'
+import { todayKey } from './paths'
 import { segmentMs } from './segmentUtils'
 import {
   appendFeedback,
+  getCompiledTitlePatterns,
   getRules,
   loadActivityState,
+  reclassifyAndRewriteDaySegments,
   saveRules,
   setRules,
 } from './storage'
@@ -39,6 +43,30 @@ function requireHooks(): FeedbackHooks {
 
 async function resultSummary(h: FeedbackHooks): Promise<ActivityDaySummary> {
   return h.getLastSummary() ?? (await h.getActivitySummary())
+}
+
+function applyLiveClassification(seg: ActivitySegment): void {
+  if (seg.category === 'afk' || seg.ignored) return
+  const r = classify(
+    seg.app,
+    seg.title ?? null,
+    false,
+    seg.domain ?? null,
+    getRules(),
+    getCompiledTitlePatterns(),
+  )
+  seg.category = r.category
+  seg.categorySource = r.source
+  seg.confidence = r.confidence
+  seg.matchedPattern = r.matchedPattern
+}
+
+async function afterRulesSaved(): Promise<void> {
+  const open = getOpenSegment()
+  if (open) applyLiveClassification(open)
+  const pending = getPendingSwitch()?.segment
+  if (pending) applyLiveClassification(pending)
+  await reclassifyAndRewriteDaySegments(todayKey())
 }
 
 export async function correctActivityCategory(
@@ -95,13 +123,7 @@ export async function correctActivityCategory(
     }
     setRules(rules)
     await saveRules()
-
-    if (openMatchesDomain && openSegment) {
-      openSegment.category = payload.category
-      openSegment.categorySource = 'user'
-      openSegment.confidence = 'high'
-      openSegment.matchedPattern = domainKey
-    }
+    await afterRulesSaved()
 
     await h.emitSummary()
     return {
@@ -185,13 +207,7 @@ export async function correctActivityCategory(
 
   setRules(rules)
   await saveRules()
-
-  if (openSegment && openSegment.app === appKey) {
-    openSegment.category = payload.category
-    openSegment.categorySource = 'user'
-    openSegment.confidence = 'high'
-    openSegment.matchedPattern = scope === 'title' ? titlePattern : null
-  }
+  await afterRulesSaved()
 
   await h.emitSummary()
   return {

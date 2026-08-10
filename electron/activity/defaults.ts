@@ -13,6 +13,7 @@ export const FOCUS_OFF_PROJECT_DWELL_MAX_SEC = 120
 
 export const CATEGORIES: ActivityCategory[] = [
   'work',
+  'studies',
   'entertainment',
   'communication',
   'system',
@@ -23,7 +24,8 @@ export const CATEGORIES: ActivityCategory[] = [
 export const DEFAULT_SETTINGS: ActivitySettings = {
   paused: false,
   storeTitles: true,
-  idleThresholdSec: 180,
+  idleThresholdSec: 60,
+  manualAfk: false,
   browserDetail: 'domain',
   parseIdeTitles: true,
   focusOffProjectDwellSec: 8,
@@ -85,6 +87,11 @@ export const DEFAULT_RULES: ActivityRules = {
     { pattern: 'jira', category: 'work' },
     { pattern: 'linear.app', category: 'work' },
     { pattern: 'figma', category: 'work' },
+    { pattern: 'khan academy', category: 'studies' },
+    { pattern: 'coursera', category: 'studies' },
+    { pattern: 'udemy', category: 'studies' },
+    { pattern: 'openclassrooms', category: 'studies' },
+    { pattern: 'kaggle', category: 'studies' },
     { pattern: 'outlook', category: 'communication' },
     { pattern: 'gmail', category: 'communication' },
     { pattern: 'mail.google', category: 'communication' },
