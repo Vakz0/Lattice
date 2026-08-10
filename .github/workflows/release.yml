@@ -29,6 +29,23 @@ jobs:
       - name: Verify (tests + typecheck)
         run: npm run verify
 
+      # electron-builder uploads .exe / .blockmap / latest.yml in parallel. If no
+      # release exists yet, each upload may race to create one → duplicate releases
+      # for the same tag (assets split). Pre-create a single draft first.
+      - name: Pre-create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh release view $env:TAG 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release $env:TAG already exists — reusing it"
+          } else {
+            gh release create $env:TAG --draft --title $env:TAG --generate-notes
+            Write-Host "Created draft release $env:TAG"
+          }
+
       - name: Build and publish NSIS installer
         run: npm run dist -- --publish always
         env:
@@ -39,8 +56,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # electron-builder sometimes leaves the GitHub release as a draft even with
-      # releaseType: release — undraft explicitly so electron-updater can find it.
+      # If a race still left duplicates, keep the release with the most assets.
+      - name: Deduplicate releases for tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $rels = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=30" | ConvertFrom-Json
+          $same = @($rels | Where-Object { $_.tag_name -eq $env:TAG })
+          Write-Host "Found $($same.Count) release(s) for $env:TAG"
+          if ($same.Count -le 1) { return }
+          $keep = $same | Sort-Object { @($_.assets).Count } -Descending | Select-Object -First 1
+          Write-Host "Keeping id=$($keep.id) assets=$(@($keep.assets).Count)"
+          foreach ($r in $same) {
+            if ($r.id -eq $keep.id) { continue }
+            Write-Host "Deleting duplicate id=$($r.id) assets=$(@($r.assets).Count)"
+            gh api -X DELETE "repos/$env:GITHUB_REPOSITORY/releases/$($r.id)"
+          }
+
       - name: Publish release (undraft)
         run: gh release edit "${{ github.ref_name }}" --draft=false --latest
         env:

@@ -75,11 +75,14 @@ Préférer les dossiers métier aux fichiers racine trop gros. Les façades raci
 ## Publier une release
 
 1. Bumper `version` dans `package.json`
-2. Commit + tag annoté : `git tag v1.2.0 && git push origin v1.2.0`
+2. Commit + tag annoté : `git tag -a v1.2.0 -m "Release v1.2.0" && git push origin main && git push origin v1.2.0`
 3. Le workflow [`.github/workflows/release.yml`](../../.github/workflows/release.yml) :
-   - build les helpers .NET + l’installateur NSIS
-   - publie sur GitHub Releases (`latest.yml` pour `electron-updater`)
-   - uploade `widgets-catalog.json`
+   - lance `npm run verify`
+   - **pré-crée un draft** GitHub Release (évite les courses electron-builder qui dupliquent les releases pour le même tag)
+   - build l’installateur NSIS et uploade les assets (`releaseType: draft`)
+   - déduplique d’éventuels doublons, puis publie (undraft) et vérifie `latest.yml` + `.exe`
+
+Un push sur `main` lance aussi **CI** (verify seul). Sur un commit de release tu vois donc **deux checks** (CI + Release) — c’est normal, pas une double publication.
 
 Les utilisateurs finaux téléchargent depuis [Releases](https://github.com/Vakz0/Lattice/releases/latest). La signature Authenticode n’est pas encore en place (SmartScreen peut avertir).
 

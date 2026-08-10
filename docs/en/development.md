@@ -75,11 +75,14 @@ Prefer domain folders over growing root files. Thin root façades (`electron/act
 ## Publish a release
 
 1. Bump `version` in `package.json`
-2. Commit + annotated tag: `git tag v1.2.0 && git push origin v1.2.0`
+2. Commit + annotated tag: `git tag -a v1.2.0 -m "Release v1.2.0" && git push origin main && git push origin v1.2.0`
 3. The [`.github/workflows/release.yml`](../../.github/workflows/release.yml) workflow:
-   - builds .NET helpers + the NSIS installer
-   - publishes to GitHub Releases (`latest.yml` for `electron-updater`)
-   - uploads `widgets-catalog.json`
+   - runs `npm run verify`
+   - **pre-creates one draft** GitHub release (avoids electron-builder races that duplicate releases for the same tag)
+   - builds the NSIS installer and uploads assets (`releaseType: draft`)
+   - deduplicates any leftover releases for that tag, then undrafts and verifies `latest.yml` + `.exe`
+
+Pushing `main` also runs **CI** (verify only). On a release commit you therefore see **two checks** (CI + Release) — that is expected, not a double publish.
 
 End users download from [Releases](https://github.com/Vakz0/Lattice/releases/latest). Code signing is not set up yet (SmartScreen may warn).
 
