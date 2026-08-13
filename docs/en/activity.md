@@ -14,9 +14,9 @@ Local time-tracking for Lattice with **structured software context** (browser do
 - Manual corrections → `feedback.jsonl` + rules (apps, titles, **domains**)
 - Widget: summary, top apps / **sites** / **projects** / **Notion tasks**, now, **day-by-day history**
 - Options: pause, **manual AFK** toggle, Web, titles, IDE parse, AFK auto threshold (default **60 s**), focus interrupt delay
-- Categories: work, **studies**, entertainment, communication, system, other, afk
+- Categories: work, **studies**, entertainment, communication, system, other, afk — plus **custom categories** (e.g. Finance) from Options
 - Manual corrections → `feedback.jsonl` + rules (apps, titles, **domains**); day segments are reclassified so the UI updates immediately
-- Widget: summary, top apps / **sites** / **projects** / **Notion tasks**, now, **day-by-day history**
+- Widget: summary with **category ring**, top apps / **sites** / **projects** / **Notion tasks**, now, **day-by-day history**
 - **Notion focus sessions**: attribute time to a task + allowlist guard (see below)
 - **Optional browser extension**: media playback → no auto-AFK + **watch time** per site (`extensions/lattice-media`)
 - Enriched CSV / JSON export (segments + focus journal)
@@ -31,6 +31,16 @@ Local time-tracking for Lattice with **structured software context** (browser do
 
 Badge **AFK manuel** in the widget header when forced.
 
+## Custom categories
+
+Built-in categories cannot be renamed or deleted. From **Options → Catégories** you can:
+
+1. **Add** a category (label + color) — id is a slug of the label (`Finance` → `finance`), uniquified if needed
+2. **Rename / recolor** a custom category (id stays stable so existing rules keep working)
+3. **Delete** a custom category — any rule pointing at it is remapped to `other`, and today’s segments are reclassified
+
+Stored in `rules.json` as `customCategories: [{ id, label, color }]`. Custom ids are valid anywhere an `ActivityCategory` is expected (corrections, overrides, title patterns).
+
 ## What is not counted
 
 - **Background apps** — collector uses `GetForegroundWindow` only
@@ -38,14 +48,16 @@ Badge **AFK manuel** in the widget header when forced.
 - **Focus under 3 s** — an app switch is committed only after **3 s** of stable focus (ignores Alt-Tab / tray flashes); AFK still switches immediately
 - Extensible `ignoredApps` in `rules.json` (default: `lattice`, `lattice-desk`)
 
-### Two dwell timers (do not confuse)
+### Two dwell timers
 
-| Timer | Constant / setting | Role |
-| --- | --- | --- |
-| **Segment dwell** | `FOCUS_DWELL_MS` = 3 s (`defaults.ts`) | Debounce normal app switches before writing a segment |
-| **Focus off-project dwell** | `focusOffProjectDwellSec` (default 8 s) | During a Notion focus session: how long off-allowlist before the interrupt window |
+Both use the same Options setting **Stabilité focus** (`focusOffProjectDwellSec`, default **8 s**, presets 3 / 5 / 8 / 12 / 20):
 
-Both are evaluated from `electron/activity/poll.ts`; the focus guard lives in `electron/focus/`.
+| Timer | Role |
+| --- | --- |
+| **Segment dwell** | Debounce normal app switches before writing a segment / updating « Maintenant » |
+| **Focus off-project dwell** | During a Notion focus session: how long off-allowlist before the interrupt window |
+
+AFK still switches immediately. Floor: 3 s (`FOCUS_OFF_PROJECT_DWELL_MIN_SEC`).
 
 ## Privacy
 
@@ -81,7 +93,7 @@ Attribution is **local** (Notion page id on segments) — no write-back of a “
 | Path | Role |
 | --- | --- |
 | `activity/settings.json` | Pause, titles, AFK, `browserDetail`, `parseIdeTitles`, `focusOffProjectDwellSec` |
-| `activity/rules.json` | Apps, title patterns, app/domain overrides, `ignoredApps` |
+| `activity/rules.json` | Apps, title patterns, app/domain overrides, `ignoredApps`, **`customCategories`** |
 | `activity/feedback.jsonl` | Corrections |
 | `activity/focus-session.json` | Current focus session (restored on restart) |
 | `activity/focus-journal.jsonl` | Interrupt notes (off-project explanations) |
@@ -132,7 +144,7 @@ Context:
 
 When the media extension reports playback and the URL helper misses (e.g. fullscreen), the playing tab origin is used as `domain`.
 
-Summaries apply **current rules** to segment categories (and corrections rewrite today’s JSONL) so Top apps / sites / bars update immediately after a change.
+Summaries apply **current rules** to segment categories (and corrections rewrite today’s JSONL) so Top apps / sites / the category ring update immediately after a change.
 
 `ignored` segments and AFK are excluded from active totals and tops.
 Browser segments with a known `domain` appear under **Top sites**, not **Top apps** (so “brave” is not the quota bucket).
@@ -148,5 +160,5 @@ Systray → **Catalog** → **Activity**. Rebuild helpers: `npm run build:helper
 - Service `activity-tracker`
 - Win32 focus via `koffi`; URL via `tools/active-url` (WPF UI Automation)
 - Lattice detection: `BrowserWindow` HWND + exe path / `ignoredApps`
-- Focus dwell: `FOCUS_DWELL_MS = 3000`
+- Focus dwell: `focusOffProjectDwellSec` (Options → Stabilité focus)
 - Idle via `powerMonitor.getSystemIdleTime()`; optional `manualAfk`

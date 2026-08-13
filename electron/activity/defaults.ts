@@ -1,25 +1,20 @@
 import type { ActivityCategory, ActivityRules, ActivitySettings } from '../../shared/types'
+import { BUILTIN_CATEGORIES } from '../../shared/types'
 
 export const POLL_MS = 2_000
 export const FLUSH_EVERY_POLLS = 15
 /**
- * Segment dwell: focus must stay stable this long before we commit an app switch.
- * Not the same as focusOffProjectDwellSec (interrupt delay during a focus session).
+ * Segment dwell AND focus-session off-allowlist interrupt share
+ * `settings.focusOffProjectDwellSec` (Options → Stabilité focus).
+ * Kept as a named constant for docs/tests that still refer to the historical 3 s default floor.
  */
 export const FOCUS_DWELL_MS = 3_000
-/** Allowed range for focusOffProjectDwellSec (focus-session off-allowlist → interrupt). */
+/** Allowed range for focusOffProjectDwellSec (segment switch + focus interrupt). */
 export const FOCUS_OFF_PROJECT_DWELL_MIN_SEC = 3
 export const FOCUS_OFF_PROJECT_DWELL_MAX_SEC = 120
 
-export const CATEGORIES: ActivityCategory[] = [
-  'work',
-  'studies',
-  'entertainment',
-  'communication',
-  'system',
-  'other',
-  'afk',
-]
+/** Built-in category ids (kept as CATEGORIES for existing imports). */
+export const CATEGORIES: ActivityCategory[] = [...BUILTIN_CATEGORIES]
 
 export const DEFAULT_SETTINGS: ActivitySettings = {
   paused: false,
@@ -66,7 +61,6 @@ export const DEFAULT_RULES: ActivityRules = {
     taskmgr: 'system',
   },
   titlePatterns: [
-    { pattern: 'youtube', category: 'entertainment' },
     { pattern: 'netflix', category: 'entertainment' },
     { pattern: 'twitch', category: 'entertainment' },
     { pattern: 'disney+', category: 'entertainment' },
@@ -101,4 +95,7 @@ export const DEFAULT_RULES: ActivityRules = {
   ],
   userAppOverrides: {},
   ignoredApps: ['lattice', 'lattice-desk'],
+  customCategories: [],
+  categoryOverrides: {},
+  disabledCategories: [],
 }

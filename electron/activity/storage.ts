@@ -8,6 +8,7 @@ import type {
   ActivitySettings,
 } from '../../shared/types'
 import { classify, rebuildCompiledPatterns, type CompiledTitlePattern } from './classifier'
+import { resolveCategory } from './categories'
 import { DEFAULT_RULES, DEFAULT_SETTINGS } from './defaults'
 import {
   activityDir,
@@ -62,6 +63,23 @@ export function mergeRules(raw: Partial<ActivityRules>): ActivityRules {
     ignoredApps: Array.isArray(raw.ignoredApps)
       ? raw.ignoredApps
       : [...(DEFAULT_RULES.ignoredApps ?? [])],
+    customCategories: Array.isArray(raw.customCategories)
+      ? raw.customCategories.filter(
+          (c) =>
+            c &&
+            typeof c.id === 'string' &&
+            c.id.trim() &&
+            typeof c.label === 'string' &&
+            typeof c.color === 'string',
+        )
+      : [],
+    categoryOverrides:
+      raw.categoryOverrides && typeof raw.categoryOverrides === 'object'
+        ? { ...raw.categoryOverrides }
+        : {},
+    disabledCategories: Array.isArray(raw.disabledCategories)
+      ? raw.disabledCategories.filter((id) => typeof id === 'string' && id.trim())
+      : [],
   }
 }
 
@@ -201,8 +219,9 @@ export async function reclassifyAndRewriteDaySegments(date: string): Promise<num
       rules,
       compiledTitlePatterns,
     )
+    const nextCategory = resolveCategory(r.category, rules)
     if (
-      r.category === seg.category &&
+      nextCategory === seg.category &&
       r.source === (seg.categorySource ?? r.source) &&
       (r.matchedPattern ?? null) === (seg.matchedPattern ?? null)
     ) {
@@ -211,7 +230,7 @@ export async function reclassifyAndRewriteDaySegments(date: string): Promise<num
     changed += 1
     return {
       ...seg,
-      category: r.category,
+      category: nextCategory,
       categorySource: r.source,
       confidence: r.confidence,
       matchedPattern: r.matchedPattern,

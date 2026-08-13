@@ -86,7 +86,7 @@ function aggregatePlaying() {
  * @param {number} now
  */
 function buildWatchDeltas(domains, now) {
-  /** @type {{ domain: string, deltaMs: number }[]} */
+  /** @type {{ domain: string, deltaMs: number, title?: string | null }[]} */
   const watch = []
   if (domains.size === 0) {
     lastFlushAt = now
@@ -98,8 +98,12 @@ function buildWatchDeltas(domains, now) {
   if (delta > MAX_DELTA_MS) delta = MAX_DELTA_MS
   lastFlushAt = now
   if (delta <= 0) return watch
-  for (const domain of domains.keys()) {
-    watch.push({ domain, deltaMs: delta })
+  for (const [domain, st] of domains) {
+    watch.push({
+      domain,
+      deltaMs: delta,
+      title: st.title || null,
+    })
   }
   return watch
 }

@@ -5,14 +5,33 @@ import type { FocusSession } from './focus'
 /** Id de widget (builtin ou futur plugin). */
 export type WidgetKind = string
 
-export type ActivityCategory =
-  | 'work'
-  | 'studies'
-  | 'entertainment'
-  | 'communication'
-  | 'system'
-  | 'other'
-  | 'afk'
+/**
+ * Category id (builtin slug or custom). Builtins: work, studies, entertainment,
+ * communication, system, other, afk. Custom ids come from ActivityRules.customCategories.
+ */
+export type ActivityCategory = string
+
+/** Built-in category literals (defaults / migration / reserved ids). */
+export const BUILTIN_CATEGORIES = [
+  'work',
+  'studies',
+  'entertainment',
+  'communication',
+  'system',
+  'other',
+  'afk',
+] as const
+
+export type BuiltinActivityCategory = (typeof BUILTIN_CATEGORIES)[number]
+
+/** User-defined category (stored in rules.json). */
+export interface ActivityCustomCategory {
+  /** Slug derived from label, unique across builtins + customs. */
+  id: string
+  label: string
+  /** Hex color, e.g. "#4f8f6a". */
+  color: string
+}
 
 export type ActivityExportFormat = 'csv' | 'json'
 
@@ -70,12 +89,22 @@ export interface ActivityAppBreakdown {
   ms: number
   category: ActivityCategory
   confidence?: ActivityConfidence
+  /** False = ligne temps seul (navigateurs, Système) — pas de select catégorie. */
+  showCategory?: boolean
 }
 
 export interface ActivitySiteBreakdown {
   domain: string
   ms: number
   category: ActivityCategory
+  /** Label affiché (ex. « youtube ») — sinon `domain`. */
+  label?: string
+  /** Scope de correction UI (vidéos → title). */
+  correctionScope?: ActivityCorrectionScope
+  /** Titre à envoyer pour une correction scope `title`. */
+  correctionTitle?: string | null
+  /** False = pas de select catégorie (ex. youtube agrégé). */
+  showCategory?: boolean
 }
 
 export interface ActivityProjectBreakdown {
@@ -166,6 +195,19 @@ export interface ActivityRules {
   userDomainOverrides?: Record<string, ActivityCategory>
   /** Noms d’exe exclus des totaux (en plus de Lattice détecté via HWND). */
   ignoredApps?: string[]
+  /** Catégories utilisateur (ex. finance) — ids utilisables partout où ActivityCategory est attendu. */
+  customCategories?: ActivityCustomCategory[]
+  /** Overrides label/couleur (y compris pour les catégories intégrées). */
+  categoryOverrides?: Record<string, { label?: string; color?: string }>
+  /** Catégories désactivées (intégrées ou custom) — hors UI / corrections ; classées en `other`. */
+  disabledCategories?: string[]
+}
+
+export interface ActivityCategoryMutationResult {
+  ok: boolean
+  message?: string
+  rules?: ActivityRules
+  summary?: ActivityDaySummary
 }
 
 export interface ActivityFeedbackEntry {

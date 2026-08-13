@@ -1,15 +1,21 @@
-import type { ActivityCategory, ActivitySegment } from '../../shared/types'
+import type {
+  ActivityCategory,
+  ActivityCustomCategory,
+  ActivitySegment,
+} from '../../shared/types'
+import { BUILTIN_CATEGORIES } from '../../shared/types'
 
-export function emptyByCategory(): Record<ActivityCategory, number> {
-  return {
-    work: 0,
-    studies: 0,
-    entertainment: 0,
-    communication: 0,
-    system: 0,
-    other: 0,
-    afk: 0,
+export function emptyByCategory(
+  customCategories?: ActivityCustomCategory[] | null,
+): Record<ActivityCategory, number> {
+  const out: Record<ActivityCategory, number> = {}
+  for (const id of BUILTIN_CATEGORIES) {
+    out[id] = 0
   }
+  for (const cat of customCategories ?? []) {
+    if (cat.id) out[cat.id] = 0
+  }
+  return out
 }
 
 export function segmentMs(s: ActivitySegment): number {

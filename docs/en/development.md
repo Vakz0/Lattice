@@ -62,8 +62,8 @@ Prefer domain folders over growing root files. Thin root façades (`electron/act
 | **`system-stats` / `temp-daemon`** | No builtin after Monitor removal (D07). Kept for **external** widgets and tray helpers; without a consumer, temp elevate stays gated off. |
 | **`window.lattice`** | Only renderer↔main bridge (preload `contextBridge`). Renderer never imports `electron/`. |
 | **Activity poll** | Foreground-only ~2 s loop in `electron/activity/poll.ts` (D08). |
-| **Segment dwell** | `FOCUS_DWELL_MS` (3 s): stable focus before committing an app-switch segment. |
-| **Focus off-project dwell** | `focusOffProjectDwellSec` (default 8 s): how long off-allowlist before the interrupt window. Different clock from segment dwell. |
+| **Segment dwell** | `focusOffProjectDwellSec` (Options → Stabilité focus): stable focus before committing an app-switch segment. |
+| **Focus off-project dwell** | Same setting: how long off-allowlist before the interrupt window. |
 | **Media bridge** | Localhost HTTP + optional browser extension for playback / AFK / watch time (D10). |
 | **Demo mode** | Notion token missing/placeholder → local demo store (D13). |
 | **Power mode** | active / idle / sleep → Notion & stats refresh intervals (D20). |

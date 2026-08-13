@@ -1,11 +1,11 @@
 /**
  * Foreground activity poll (~2 s): idle / FG window / URL / classify → segments.
  *
- * Two independent dwell clocks (do not merge):
- * - FOCUS_DWELL_MS (3 s): debounce app switches before committing `openSegment`
- *   (pendingSwitch). AFK bypasses this and switches immediately.
- * - settings.focusOffProjectDwellSec (default 8 s): during a Notion focus session,
- *   how long off-allowlist before `evaluateFocusGuard` opens the interrupt window.
+ * Two dwell clocks (same setting `focusOffProjectDwellSec` by design):
+ * - Segment dwell: focus must stay stable this long before committing an app switch
+ *   (`pendingSwitch`). AFK bypasses this and switches immediately.
+ * - Focus off-project dwell: during a Notion focus session, how long off-allowlist
+ *   before `evaluateFocusGuard` opens the interrupt window.
  *
  * See docs/en/activity.md “Two dwell timers”.
  */
@@ -30,10 +30,14 @@ import {
   getFocusAttribution,
   hasFocusSession,
 } from '../focus'
-import { getMediaPlaybackDomain, isMediaKeepAwakeActive } from './mediaBridge'
+import { getMediaPlaybackDomain, getMediaPlaybackTitle, isMediaKeepAwakeActive } from './mediaBridge'
 import { classify, isIgnoredApp, type ClassifyResult } from './classifier'
-import { DEFAULT_RULES, FLUSH_EVERY_POLLS, FOCUS_DWELL_MS } from './defaults'
+import { DEFAULT_RULES, FLUSH_EVERY_POLLS, FOCUS_OFF_PROJECT_DWELL_MIN_SEC } from './defaults'
 import { normalizeAppKey } from './normalize'
+import {
+  isYoutubeHost,
+  normalizeYoutubePageTitle,
+} from '../../shared/youtubeVideo'
 import {
   appendSegment,
   getCompiledTitlePatterns,
@@ -48,8 +52,17 @@ let pollsSinceFlush = 0
 let lastApp: string | null = null
 let currentSessionId: string | null = null
 let pollInFlight = false
-/** Candidate focus awaiting FOCUS_DWELL_MS before replacing openSegment. */
+/** Candidate focus awaiting segment dwell before replacing openSegment. */
 let pendingSwitch: { sinceMs: number; segment: ActivitySegment } | null = null
+
+function segmentDwellMs(settings: { focusOffProjectDwellSec?: number }): number {
+  const sec = settings.focusOffProjectDwellSec
+  const safe =
+    typeof sec === 'number' && Number.isFinite(sec)
+      ? Math.max(FOCUS_OFF_PROJECT_DWELL_MIN_SEC, Math.round(sec))
+      : 8
+  return safe * 1000
+}
 
 let running = false
 let notifySummary: () => void = () => {}
@@ -208,7 +221,7 @@ async function resolvePollSample(now: Date): Promise<PollSample> {
     pendingSwitch = null
   }
 
-  const title = settings.storeTitles && !idle ? rawTitle || null : null
+  let title = settings.storeTitles && !idle ? rawTitle || null : null
   const titleHash =
     !settings.storeTitles && rawTitle && !idle ? shortTitleHash(rawTitle) : null
 
@@ -223,24 +236,40 @@ async function resolvePollSample(now: Date): Promise<PollSample> {
   if (!idle && !ignored) {
     if (BROWSER_APPS.has(app) && settings.browserDetail !== 'off') {
       // During a focus session, always resolve full URL for video-level allowlisting
-      // even when tracking settings only store the domain.
+      // even when tracking settings only store the domain. Same for YouTube tabs
+      // so we can bucket per video.
       const needUrlForFocus = hasFocusSession()
-      const fetchDetail = needUrlForFocus ? 'url' : settings.browserDetail
+      const titleLooksYt = normalizeYoutubePageTitle(rawTitle || null) !== null
+      const fetchDetail =
+        needUrlForFocus || settings.browserDetail === 'url' || titleLooksYt
+          ? 'url'
+          : settings.browserDetail
       const browser = await fetchBrowserUrl(app, fetchDetail)
       domain = browser.domain
       guardUrlPath = browser.urlPath
-      urlPath = settings.browserDetail === 'url' ? browser.urlPath : null
       if (!domain) {
         const fromTitle = domainFromBrowserTitle(rawTitle || null, fetchDetail)
         domain = fromTitle.domain
         guardUrlPath = fromTitle.urlPath
-        urlPath = settings.browserDetail === 'url' ? fromTitle.urlPath : null
       }
       // Extension media bridge: when UIA/title miss (fullscreen video…), use playing origin.
       if (!domain) {
         domain = getMediaPlaybackDomain()
       }
+      const persistUrl =
+        settings.browserDetail === 'url' ||
+        needUrlForFocus ||
+        isYoutubeHost(domain) ||
+        titleLooksYt
+      urlPath = persistUrl ? guardUrlPath : null
       contextKind = 'browser'
+
+      // Prefer Media Session / extension title for the playing video.
+      const mediaTitle = getMediaPlaybackTitle()
+      if (mediaTitle && (isYoutubeHost(domain) || titleLooksYt)) {
+        rawTitle = mediaTitle
+        if (settings.storeTitles) title = mediaTitle
+      }
     } else {
       const parsed = parseIdeOrChatTitle(app, rawTitle || null, settings.parseIdeTitles)
       contextKind = parsed.contextKind
@@ -401,7 +430,7 @@ export async function pollOnce(): Promise<void> {
 
     if (pendingSwitch && sameFocus(pendingSwitch.segment, next)) {
       pendingSwitch.segment = { ...next, start: pendingSwitch.segment.start }
-      if (nowMs - pendingSwitch.sinceMs >= FOCUS_DWELL_MS) {
+      if (nowMs - pendingSwitch.sinceMs >= segmentDwellMs(settings)) {
         await closeOpenSegment(now)
         openSegment = {
           ...pendingSwitch.segment,

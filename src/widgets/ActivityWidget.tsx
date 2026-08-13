@@ -1,8 +1,9 @@
-import { ActivityCategoryBars } from './activity/ActivityCategoryBars'
+import { ActivityCategoryRing } from './activity/ActivityCategoryRing'
 import { ActivityFocusJournal } from './activity/ActivityFocusJournal'
 import { ActivityFocusPanel } from './activity/ActivityFocusPanel'
 import { ActivityNowCard } from './activity/ActivityNowCard'
 import { ActivityOptionsFooter } from './activity/ActivityOptionsFooter'
+import { ActivityOptionsPage } from './activity/ActivityOptionsPage'
 import { ActivityTopLists } from './activity/ActivityTopLists'
 import { errMessage, formatDayTitle, formatDuration, todayKey } from './activity/format'
 import { useActivityWidget } from './activity/useActivityWidget'
@@ -25,6 +26,9 @@ export function ActivityWidget() {
     isToday,
     activeMs,
     categoryRows,
+    categoryMeta,
+    categoryOptions,
+    customCategories,
     qualityHint,
     session,
     afkLabel,
@@ -47,6 +51,9 @@ export function ActivityWidget() {
     doClear,
     correct,
     reloadRules,
+    addCategory,
+    updateCategory,
+    deleteCategory,
     focusPauseToggle,
     focusStop,
     saveAllowlist,
@@ -54,125 +61,172 @@ export function ActivityWidget() {
 
   const manualAfk = settings?.manualAfk ?? data.manualAfk ?? false
 
+  function openOptions() {
+    setOptionsOpen(true)
+    setConfirmClear(false)
+  }
+
+  function closeOptions() {
+    setOptionsOpen(false)
+    setConfirmClear(false)
+  }
+
   return (
     <div className="widget-shell activity-shell drag-region">
-      <header className="activity-header">
-        <div>
-          <div className="activity-kicker">Activité</div>
-          <div className="activity-title-row">
-            <button
-              type="button"
-              className="activity-day-nav no-drag"
-              disabled={busy}
-              aria-label="Jour précédent"
-              onClick={() => void goDay(-1)}
-            >
-              ‹
-            </button>
-            <h1 className="activity-title">{formatDayTitle(viewDate, todayKey())}</h1>
-            <button
-              type="button"
-              className="activity-day-nav no-drag"
-              disabled={busy || isToday || viewDate >= todayKey()}
-              aria-label="Jour suivant"
-              onClick={() => void goDay(1)}
-            >
-              ›
-            </button>
+      {!optionsOpen ? (
+        <header className="activity-header">
+          <div>
+            <div className="activity-kicker">Activité</div>
+            <div className="activity-title-row">
+              <button
+                type="button"
+                className="activity-day-nav no-drag"
+                disabled={busy}
+                aria-label="Jour précédent"
+                onClick={() => void goDay(-1)}
+              >
+                ‹
+              </button>
+              <h1 className="activity-title">{formatDayTitle(viewDate, todayKey())}</h1>
+              <button
+                type="button"
+                className="activity-day-nav no-drag"
+                disabled={busy || isToday || viewDate >= todayKey()}
+                aria-label="Jour suivant"
+                onClick={() => void goDay(1)}
+              >
+                ›
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="activity-header-meta no-drag">
-          {manualAfk ? (
+          <div className="activity-header-meta no-drag">
+            {manualAfk ? (
+              <span
+                className="activity-media-badge activity-afk-badge"
+                title="AFK forcé manuellement — le suivi reprend au prochain clic AFK"
+              >
+                AFK manuel
+              </span>
+            ) : data.mediaKeepAwake ? (
+              <span
+                className="activity-media-badge"
+                title="Lecture média signalée par l’extension — AFK auto suspendu"
+              >
+                Média
+              </span>
+            ) : null}
             <span
-              className="activity-media-badge activity-afk-badge"
-              title="AFK forcé manuellement — le suivi reprend au prochain clic AFK"
+              className={`activity-live${data.tracking ? '' : ' is-paused'}`}
+              title={data.tracking ? 'Suivi actif' : 'Suivi en pause'}
             >
-              AFK manuel
+              <span className="activity-live-dot" />
+              {data.tracking ? 'Suivi' : 'Pause'}
             </span>
-          ) : data.mediaKeepAwake ? (
-            <span
-              className="activity-media-badge"
-              title="Lecture média signalée par l’extension — AFK auto suspendu"
-            >
-              Média
-            </span>
-          ) : null}
-          <span
-            className={`activity-live${data.tracking ? '' : ' is-paused'}`}
-            title={data.tracking ? 'Suivi actif' : 'Suivi en pause'}
-          >
-            <span className="activity-live-dot" />
-            {data.tracking ? 'Suivi' : 'Pause'}
-          </span>
-        </div>
-      </header>
+          </div>
+        </header>
+      ) : null}
 
       <div className="activity-body no-drag">
-        {!data.urlHelperAvailable && (settings?.browserDetail ?? 'domain') !== 'off' ? (
-          <div className="activity-banner activity-banner-warn" role="status">
-            Helper URL introuvable — domaines via titre uniquement. Rebuild :{' '}
-            <code>npm run build:helpers</code>
-          </div>
-        ) : null}
-
-        <section className="activity-hero">
-          <div className="activity-hero-total">{formatDuration(activeMs)}</div>
-          <div className="activity-hero-sub">
-            temps actif · {formatDuration(data.byCategory.afk)} AFK
-          </div>
-          {qualityHint ? (
-            <div className="activity-quality" title="Part du temps classé « Autre »">
-              {qualityHint}
-              {(data.quality?.feedbackCountToday ?? 0) > 0
-                ? ` · ${data.quality.feedbackCountToday} correction(s)`
-                : ''}
-            </div>
-          ) : null}
-        </section>
-
-        {session ? (
-          <ActivityFocusPanel
-            session={session}
+        {optionsOpen ? (
+          <ActivityOptionsPage
             busy={busy}
-            allowApps={allowApps}
-            allowDomains={allowDomains}
-            allowProjects={allowProjects}
-            allowUrls={allowUrls}
-            onAllowAppsChange={setAllowApps}
-            onAllowDomainsChange={setAllowDomains}
-            onAllowProjectsChange={setAllowProjects}
-            onAllowUrlsChange={setAllowUrls}
-            onPauseToggle={() => void focusPauseToggle()}
-            onStop={() => void focusStop()}
-            onSaveAllowlist={() => void saveAllowlist()}
+            paused={data.paused}
+            manualAfk={manualAfk}
+            settings={settings}
+            afkLabel={afkLabel}
+            categoryOptions={categoryOptions}
+            customCategories={customCategories}
+            onBack={closeOptions}
+            onTogglePause={() => void togglePause()}
+            onToggleManualAfk={() => void toggleManualAfk()}
+            onCycleBrowserDetail={() => void cycleBrowserDetail()}
+            onToggleStoreTitles={() => void toggleStoreTitles()}
+            onToggleParseIde={() => void toggleParseIde()}
+            onSetIdleThreshold={(sec) => void setIdleThreshold(sec)}
+            onCycleFocusDwell={() => void cycleFocusDwell()}
+            onReloadRules={() => void reloadRules()}
+            onAddCategory={addCategory}
+            onUpdateCategory={updateCategory}
+            onDeleteCategory={deleteCategory}
           />
-        ) : null}
+        ) : (
+          <>
+            {!data.urlHelperAvailable && (settings?.browserDetail ?? 'domain') !== 'off' ? (
+              <div className="activity-banner activity-banner-warn" role="status">
+                Helper URL introuvable — domaines via titre uniquement. Rebuild :{' '}
+                <code>npm run build:helpers</code>
+              </div>
+            ) : null}
 
-        {data.current && isToday ? (
-          <ActivityNowCard current={data.current} busy={busy} onCorrect={correct} />
-        ) : null}
+            <section className="activity-hero activity-hero-split">
+              <div className="activity-hero-copy">
+                <div className="activity-hero-total">{formatDuration(activeMs)}</div>
+                <div className="activity-hero-sub">
+                  temps actif · {formatDuration(data.byCategory.afk ?? 0)} AFK
+                </div>
+                {qualityHint ? (
+                  <div className="activity-quality" title="Part du temps classé « Autre »">
+                    {qualityHint}
+                    {(data.quality?.feedbackCountToday ?? 0) > 0
+                      ? ` · ${data.quality.feedbackCountToday} correction(s)`
+                      : ''}
+                  </div>
+                ) : null}
+              </div>
+              <ActivityCategoryRing
+                categoryRows={categoryRows}
+                activeMs={activeMs}
+                categoryMeta={categoryMeta}
+              />
+            </section>
 
-        <ActivityCategoryBars categoryRows={categoryRows} activeMs={activeMs} />
+            {session ? (
+              <ActivityFocusPanel
+                session={session}
+                busy={busy}
+                allowApps={allowApps}
+                allowDomains={allowDomains}
+                allowProjects={allowProjects}
+                allowUrls={allowUrls}
+                onAllowAppsChange={setAllowApps}
+                onAllowDomainsChange={setAllowDomains}
+                onAllowProjectsChange={setAllowProjects}
+                onAllowUrlsChange={setAllowUrls}
+                onPauseToggle={() => void focusPauseToggle()}
+                onStop={() => void focusStop()}
+                onSaveAllowlist={() => void saveAllowlist()}
+              />
+            ) : null}
 
-        <ActivityTopLists data={data} busy={busy} onCorrect={correct} />
+            {data.current && isToday ? (
+              <ActivityNowCard
+                current={data.current}
+                busy={busy}
+                categoryOptions={categoryOptions}
+                onCorrect={correct}
+              />
+            ) : null}
 
-        <ActivityFocusJournal journal={journal} />
+            <ActivityTopLists
+              data={data}
+              busy={busy}
+              categoryMeta={categoryMeta}
+              categoryOptions={categoryOptions}
+              onCorrect={correct}
+            />
+
+            <ActivityFocusJournal journal={journal} />
+          </>
+        )}
       </div>
 
       <ActivityOptionsFooter
         busy={busy}
-        paused={data.paused}
-        manualAfk={manualAfk}
-        settings={settings}
         optionsOpen={optionsOpen}
         confirmClear={confirmClear}
         hint={hint}
         hintError={hintError}
-        afkLabel={afkLabel}
-        onToggleOptions={() => {
-          setOptionsOpen((o) => !o)
-          setConfirmClear(false)
-        }}
+        onOpenOptions={openOptions}
         onExport={(fmt) => void doExport(fmt)}
         onOpenRules={() =>
           void window.lattice.openActivityRules().catch((err) => {
@@ -184,14 +238,6 @@ export function ActivityWidget() {
           setConfirmClear(false)
           setStatus(null)
         }}
-        onTogglePause={() => void togglePause()}
-        onToggleManualAfk={() => void toggleManualAfk()}
-        onCycleBrowserDetail={() => void cycleBrowserDetail()}
-        onToggleStoreTitles={() => void toggleStoreTitles()}
-        onToggleParseIde={() => void toggleParseIde()}
-        onSetIdleThreshold={(sec) => void setIdleThreshold(sec)}
-        onCycleFocusDwell={() => void cycleFocusDwell()}
-        onReloadRules={() => void reloadRules()}
       />
     </div>
   )

@@ -14,9 +14,9 @@ Widget Lattice de suivi du temps passé sur le PC, avec **contexte logiciel** (d
 - Correction manuelle → `feedback.jsonl` + règles (apps, titres, **domaines**)
 - Widget : résumé, top apps / **sites** / **projets** / **tâches Notion**, maintenant, **historique jour par jour**
 - Options : pause, toggle **AFK manuel**, Web, titres, parse IDE, seuil AFK auto (défaut **60 s**), délai interruption focus
-- Catégories : travail, **études**, divertissement, communication, système, autre, afk
+- Catégories : travail, **études**, divertissement, communication, système, autre, afk — plus **catégories personnalisées** (ex. Finance) depuis Options
 - Correction manuelle → `feedback.jsonl` + règles (apps, titres, **domaines**) ; les segments du jour sont reclassifiés pour que l’UI se mette à jour tout de suite
-- Widget : résumé, top apps / **sites** / **projets** / **tâches Notion**, maintenant, **historique jour par jour**
+- Widget : résumé avec **anneau de catégories**, top apps / **sites** / **projets** / **tâches Notion**, maintenant, **historique jour par jour**
 - **Sessions focus Notion** : imputer le temps à une tâche + garde-fou allowlist (voir ci-dessous)
 - **Extension navigateur** (optionnelle) : lecture média → pas d’AFK auto + **temps de visionnage** par site (`extensions/lattice-media`)
 - Export CSV / JSON enrichi (segments + journal focus)
@@ -31,6 +31,16 @@ Widget Lattice de suivi du temps passé sur le PC, avec **contexte logiciel** (d
 
 Badge **AFK manuel** dans l’en-tête du widget quand forcé.
 
+## Catégories personnalisées
+
+Les catégories intégrées ne peuvent pas être renommées ni supprimées. Depuis **Options → Catégories** vous pouvez :
+
+1. **Ajouter** une catégorie (label + couleur) — l’id est un slug du label (`Finance` → `finance`), uniquifié si besoin
+2. **Renommer / recolore** une catégorie custom (l’id reste stable pour les règles existantes)
+3. **Supprimer** une catégorie custom — toute règle qui la pointe est remappée vers `other`, et les segments du jour sont reclassifiés
+
+Stockage dans `rules.json` : `customCategories: [{ id, label, color }]`. Les ids custom sont valides partout où une `ActivityCategory` est attendue (corrections, overrides, motifs titre).
+
 ## Ce qui n’est pas compté
 
 - **Apps en arrière-plan** — le collecteur lit `GetForegroundWindow` uniquement
@@ -38,14 +48,16 @@ Badge **AFK manuel** dans l’en-tête du widget quand forcé.
 - **Focus < 3 s** — un changement d’app n’est validé qu’après **3 s** de focus stable (ignore Alt-Tab / flash systray) ; l’AFK reste immédiat
 - Liste extensible `ignoredApps` dans `rules.json` (défaut : `lattice`, `lattice-desk`)
 
-### Deux horloges de dwell (ne pas confondre)
+### Deux horloges de dwell
 
-| Horloge | Constante / réglage | Rôle |
-| --- | --- | --- |
-| **Dwell segment** | `FOCUS_DWELL_MS` = 3 s (`defaults.ts`) | Debounce des changements d’app avant d’écrire un segment |
-| **Dwell hors-projet** | `focusOffProjectDwellSec` (défaut 8 s) | Pendant une session focus Notion : durée hors allowlist avant la fenêtre d’interruption |
+Les deux utilisent le même réglage Options **Stabilité focus** (`focusOffProjectDwellSec`, défaut **8 s**, presets 3 / 5 / 8 / 12 / 20) :
 
-Les deux sont évaluées depuis `electron/activity/poll.ts` ; la garde focus vit dans `electron/focus/`.
+| Horloge | Rôle |
+| --- | --- |
+| **Dwell segment** | Debounce des changements d’app avant d’écrire un segment / mettre à jour « Maintenant » |
+| **Dwell hors-projet** | Pendant une session focus Notion : durée hors allowlist avant la fenêtre d’interruption |
+
+L’AFK bascule toujours immédiatement. Plancher : 3 s (`FOCUS_OFF_PROJECT_DWELL_MIN_SEC`).
 
 ## Vie privée
 
@@ -81,7 +93,7 @@ L’imputation est **locale** (id de page Notion sur les segments) — pas d’�
 | Chemin | Rôle |
 | --- | --- |
 | `activity/settings.json` | Pause, titres, AFK, `browserDetail`, `parseIdeTitles`, `focusOffProjectDwellSec` |
-| `activity/rules.json` | Apps, motifs titre, overrides app/domaine, `ignoredApps` |
+| `activity/rules.json` | Apps, motifs titre, overrides app/domaine, `ignoredApps`, **`customCategories`** |
 | `activity/feedback.jsonl` | Corrections |
 | `activity/focus-session.json` | Session focus en cours (reprise au redémarrage) |
 | `activity/focus-journal.jsonl` | Notes d’interruption (explications hors projet) |
@@ -132,7 +144,7 @@ Contexte :
 
 Si l’extension média signale une lecture et que le helper URL rate (ex. plein écran), l’origine de l’onglet en lecture sert de `domain`.
 
-Les résumés appliquent les **règles courantes** aux catégories (et une correction réécrit le JSONL du jour) pour que Top apps / sites / barres se mettent à jour immédiatement.
+Les résumés appliquent les **règles courantes** aux catégories (et une correction réécrit le JSONL du jour) pour que Top apps / sites / l’anneau se mettent à jour immédiatement.
 
 Les segments `ignored` et AFK sont exclus des totaux actifs et des tops.
 Les segments navigateur avec un `domain` connu vont dans **Top sites**, pas **Top apps** (Brave n’est plus le seau de quota).
@@ -148,5 +160,5 @@ Systray → **Catalogue** → **Activité**. Rebuild helpers : `npm run build:he
 - Service `activity-tracker`
 - Win32 focus via `koffi` ; URL via `tools/active-url` (WPF UI Automation)
 - Détection Lattice : HWND des `BrowserWindow` + chemin exe / `ignoredApps`
-- Dwell focus : `FOCUS_DWELL_MS = 3000`
+- Dwell focus : `focusOffProjectDwellSec` (Options → Stabilité focus)
 - Idle via `powerMonitor.getSystemIdleTime()` ; option `manualAfk`

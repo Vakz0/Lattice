@@ -25,8 +25,16 @@
 
 - **Catalog** — empty shell on first launch; enable Calendar, Tasks, Activity from the systray
 - **Notion** — week calendar + open tasks on the desktop (demo mode without a token)
-- **Activity** — local focus time by app/category (work, entertainment, …) with CSV/JSON export; optional [media extension](extensions/lattice-media/README.md) to suppress AFK while a video plays — [guide](docs/en/activity.md)
+- **Activity** — local focus time by app/category (work, entertainment, custom categories like Finance, …) with CSV/JSON export; optional [media extension](extensions/lattice-media/README.md) to suppress AFK while a video plays — [guide](docs/en/activity.md)
 - **Updates** — NSIS installer via GitHub Releases; silent check on startup + Settings buttons (app and external widgets)
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/screenshots/activity-overview.png" alt="Activity widget — day overview with category ring" width="420" />
+  &nbsp;
+  <img src="docs/assets/screenshots/activity-categories.png" alt="Activity widget — custom categories (Finance)" width="420" />
+</p>
 
 ## Quick start
 

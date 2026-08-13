@@ -43,6 +43,20 @@ export function normalizeYoutubePageTitle(title: string | null | undefined): str
   return page || null
 }
 
+/** Human-readable video title (preserves casing), or null if not a YouTube tab title. */
+export function displayYoutubeTitle(title: string | null | undefined): string | null {
+  if (!title) return null
+  let page = stripBrowserAppSuffix(title)
+  if (!YOUTUBE_TITLE_SUFFIX_RE.test(page) && !/^YouTube\s*$/i.test(page)) {
+    return null
+  }
+  page = page
+    .replace(/^\(\d+\)\s*/, '')
+    .replace(/\s*[-—–]\s*YouTube\s*$/i, '')
+    .trim()
+  return page || null
+}
+
 function validVideoId(id: string | null | undefined): string | null {
   if (!id) return null
   const trimmed = id.trim()
@@ -99,6 +113,18 @@ export function youtubeAllowlistKey(videoId: string): string {
 export function youtubeTitleAllowlistKey(title: string | null | undefined): string | null {
   const normalized = normalizeYoutubePageTitle(title)
   return normalized ? `yt-title:${normalized}` : null
+}
+
+/** Stable bucket key for aggregating one YouTube video (id preferred, else title). */
+export function youtubeVideoBucketKey(
+  domain: string | null | undefined,
+  urlPath: string | null | undefined,
+  title: string | null | undefined,
+): string | null {
+  if (!isYoutubeHost(domain)) return null
+  const id = extractYoutubeVideoId(domain, urlPath)
+  if (id) return youtubeAllowlistKey(id)
+  return youtubeTitleAllowlistKey(title)
 }
 
 /** Focus URL allowlist key for the current browser page, if applicable. */

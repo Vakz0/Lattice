@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron'
 import type {
+  ActivityCategoryMutationResult,
   ActivityCorrectionPayload,
   ActivityCorrectionResult,
   ActivityDaySummary,
@@ -36,6 +37,21 @@ export function createActivityApi() {
       payload: ActivityCorrectionPayload,
     ): Promise<ActivityCorrectionResult> =>
       ipcRenderer.invoke('correct-activity-category', payload),
+    addActivityCategory: (payload: {
+      label: string
+      color: string
+    }): Promise<ActivityCategoryMutationResult> =>
+      ipcRenderer.invoke('add-activity-category', payload),
+    updateActivityCategory: (payload: {
+      id: string
+      label?: string
+      color?: string
+    }): Promise<ActivityCategoryMutationResult> =>
+      ipcRenderer.invoke('update-activity-category', payload),
+    deleteActivityCategory: (payload: {
+      id: string
+    }): Promise<ActivityCategoryMutationResult> =>
+      ipcRenderer.invoke('delete-activity-category', payload),
     clearActivityData: (): Promise<{
       ok: boolean
       message: string

@@ -1,5 +1,5 @@
 /**
- * Activity widget state: day summary, settings, rules (custom categories), and focus controls.
+ * Activity widget state: day summary, settings, and focus-session controls.
  * Subscribes to `activity-updated` / focus events from main; mutations go
  * through window.lattice (activity + focus APIs). Day navigation is local.
  */
@@ -8,14 +8,13 @@ import type {
   ActivityBrowserDetail,
   ActivityCategory,
   ActivityCorrectionScope,
-  ActivityCustomCategory,
   ActivityDaySummary,
-  ActivityRules,
   ActivitySettings,
 } from '../../vite-env'
 import {
   AFK_PRESETS,
-  buildCategoryMeta,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
   emptySummary,
   errMessage,
   shiftDate,
@@ -26,7 +25,6 @@ import { useFocusSessionControls } from './useFocusSessionControls'
 export function useActivityWidget() {
   const [summary, setSummary] = useState<ActivityDaySummary | null>(null)
   const [settings, setSettings] = useState<ActivitySettings | null>(null)
-  const [rules, setRules] = useState<ActivityRules | null>(null)
   const [viewDate, setViewDate] = useState(todayKey)
   const [busy, setBusy] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
@@ -61,12 +59,6 @@ export function useActivityWidget() {
       .getActivitySettings()
       .then((s) => {
         if (alive) setSettings(s)
-      })
-      .catch(() => undefined)
-    void window.lattice
-      .getActivityRules()
-      .then((r) => {
-        if (alive) setRules(r)
       })
       .catch(() => undefined)
     const offActivity = window.lattice.onActivityUpdated((s) => {
@@ -115,37 +107,26 @@ export function useActivityWidget() {
 
   const data = summary ?? emptySummary(viewDate)
   const isToday = data.date === todayKey()
-  const categoryMeta = useMemo(
-    () =>
-      buildCategoryMeta(rules?.customCategories, {
-        overrides: rules?.categoryOverrides,
-        disabled: rules?.disabledCategories,
-      }),
-    [rules?.customCategories, rules?.categoryOverrides, rules?.disabledCategories],
-  )
-
   const activeMs = useMemo(() => {
-    return categoryMeta.order
-      .filter((c) => c !== 'afk')
-      .reduce((acc, c) => acc + (data.byCategory[c] ?? 0), 0)
-  }, [data, categoryMeta.order])
+    return CATEGORY_ORDER.filter((c) => c !== 'afk').reduce(
+      (acc, c) => acc + (data.byCategory[c] ?? 0),
+      0,
+    )
+  }, [data])
 
   const categoryRows = useMemo(() => {
-    return categoryMeta.order
-      .map((id) => ({
-        id,
-        label: categoryMeta.labels[id] ?? id,
-        color: categoryMeta.colors[id] ?? '#9b7dba',
-        ms: data.byCategory[id] ?? 0,
-      }))
-      .filter(
-        (row) =>
-          row.ms > 0 ||
-          row.id === 'work' ||
-          row.id === 'studies' ||
-          row.id === 'entertainment',
-      )
-  }, [data, categoryMeta])
+    return CATEGORY_ORDER.map((id) => ({
+      id,
+      label: CATEGORY_LABELS[id],
+      ms: data.byCategory[id] ?? 0,
+    })).filter(
+      (row) =>
+        row.ms > 0 ||
+        row.id === 'work' ||
+        row.id === 'studies' ||
+        row.id === 'entertainment',
+    )
+  }, [data])
 
   const qualityHint = useMemo(() => {
     const pct = Math.round((data.quality?.otherShare ?? 0) * 100)
@@ -223,13 +204,13 @@ export function useActivityWidget() {
 
   async function cycleFocusDwell() {
     if (!settings) return
-    const presets = [3, 5, 8, 12, 20]
+    const presets = [5, 8, 12, 20]
     const cur = settings.focusOffProjectDwellSec ?? 8
     const idx = presets.indexOf(cur)
     const next = presets[(idx + 1) % presets.length]
     await patchSettings(
       { focusOffProjectDwellSec: next },
-      `Stabilité focus : ${next}s (changement d’app + interruption).`,
+      `Interruption focus après ${next}s hors allowlist.`,
     )
   }
 
@@ -304,7 +285,6 @@ export function useActivityWidget() {
         titleSample,
         domain,
       })
-      if (res.rules) setRules(res.rules)
       if (res.summary && isToday) setSummary(res.summary)
       else if (res.ok) {
         const s = await window.lattice.getActivitySummary(viewDate)
@@ -325,8 +305,7 @@ export function useActivityWidget() {
     setBusy(true)
     setStatus(null)
     try {
-      const next = await window.lattice.reloadActivityRules()
-      setRules(next)
+      await window.lattice.reloadActivityRules()
       const s = await window.lattice.getActivitySummary(viewDate)
       setSummary(s)
       setStatus('Règles rechargées.')
@@ -338,76 +317,15 @@ export function useActivityWidget() {
     }
   }
 
-  async function addCategory(label: string, color: string) {
-    setBusy(true)
-    setStatus(null)
-    try {
-      const res = await window.lattice.addActivityCategory({ label, color })
-      if (res.rules) setRules(res.rules)
-      if (res.summary && isToday) setSummary(res.summary)
-      setStatus(res.message ?? (res.ok ? 'Catégorie ajoutée.' : 'Échec.'), !res.ok)
-      return res.ok
-    } catch (err) {
-      setStatus(errMessage(err, 'Ajout de catégorie impossible.'), true)
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function updateCategory(
-    id: string,
-    patch: { label?: string; color?: string },
-  ) {
-    setBusy(true)
-    setStatus(null)
-    try {
-      const res = await window.lattice.updateActivityCategory({ id, ...patch })
-      if (res.rules) setRules(res.rules)
-      if (res.summary && isToday) setSummary(res.summary)
-      setStatus(res.message ?? (res.ok ? 'Catégorie mise à jour.' : 'Échec.'), !res.ok)
-      return res.ok
-    } catch (err) {
-      setStatus(errMessage(err, 'Mise à jour de catégorie impossible.'), true)
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function deleteCategory(id: string) {
-    setBusy(true)
-    setStatus(null)
-    try {
-      const res = await window.lattice.deleteActivityCategory({ id })
-      if (res.rules) setRules(res.rules)
-      if (res.summary) setSummary(res.summary)
-      else if (res.ok) {
-        const s = await window.lattice.getActivitySummary(viewDate)
-        setSummary(s)
-      }
-      setStatus(res.message ?? (res.ok ? 'Catégorie supprimée.' : 'Échec.'), !res.ok)
-      return res.ok
-    } catch (err) {
-      setStatus(errMessage(err, 'Suppression de catégorie impossible.'), true)
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const session = focus.focusSession ?? data.focusSession
 
   const afkLabel =
     AFK_PRESETS.find((p) => p.sec === settings?.idleThresholdSec)?.label ??
     (settings ? `${settings.idleThresholdSec}s` : '…')
 
-  const customCategories: ActivityCustomCategory[] = categoryMeta.custom
-
   return {
     data,
     settings,
-    rules,
     viewDate,
     busy,
     hint,
@@ -422,9 +340,6 @@ export function useActivityWidget() {
     isToday,
     activeMs,
     categoryRows,
-    categoryMeta,
-    categoryOptions: categoryMeta.options,
-    customCategories,
     qualityHint,
     session,
     afkLabel,
@@ -447,9 +362,6 @@ export function useActivityWidget() {
     doClear,
     correct,
     reloadRules,
-    addCategory,
-    updateCategory,
-    deleteCategory,
     focusPauseToggle: focus.focusPauseToggle,
     focusStop: focus.focusStop,
     saveAllowlist: focus.saveAllowlist,

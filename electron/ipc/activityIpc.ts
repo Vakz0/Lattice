@@ -1,13 +1,16 @@
 import { ipcMain } from 'electron'
 import {
+  addActivityCategory,
   clearActivityData,
   correctActivityCategory,
+  deleteActivityCategory,
   exportActivity,
   getActivityRules,
   getActivitySettings,
   getActivitySummary,
   openActivityRulesFile,
   reloadActivityRules,
+  updateActivityCategory,
   updateActivitySettings,
 } from '../activity'
 import type {
@@ -16,6 +19,15 @@ import type {
   ActivitySettings,
 } from '../../shared/types'
 import type { IpcDeps } from './types'
+
+function requireTracker<T>(
+  deps: IpcDeps,
+  run: () => T | Promise<T>,
+  fallback: () => T | Promise<T>,
+): T | Promise<T> {
+  if (!deps.hasService('activity-tracker')) return fallback()
+  return run()
+}
 
 export function registerActivityIpc(deps: IpcDeps): void {
   ipcMain.handle('get-activity-summary', (_e, date?: string) => getActivitySummary(date))
@@ -54,6 +66,33 @@ export function registerActivityIpc(deps: IpcDeps): void {
       }
       return correctActivityCategory(payload)
     },
+  )
+  ipcMain.handle(
+    'add-activity-category',
+    (_e, payload: { label: string; color: string }) =>
+      requireTracker(
+        deps,
+        () => addActivityCategory(payload ?? { label: '', color: '' }),
+        () => ({ ok: false, message: 'Activez le widget Activité.' }),
+      ),
+  )
+  ipcMain.handle(
+    'update-activity-category',
+    (_e, payload: { id: string; label?: string; color?: string }) =>
+      requireTracker(
+        deps,
+        () => updateActivityCategory(payload ?? { id: '' }),
+        () => ({ ok: false, message: 'Activez le widget Activité.' }),
+      ),
+  )
+  ipcMain.handle(
+    'delete-activity-category',
+    (_e, payload: { id: string }) =>
+      requireTracker(
+        deps,
+        () => deleteActivityCategory(payload ?? { id: '' }),
+        () => ({ ok: false, message: 'Activez le widget Activité.' }),
+      ),
   )
   ipcMain.handle('clear-activity-data', async () => {
     if (!deps.hasService('activity-tracker')) {

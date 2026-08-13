@@ -22,4 +22,11 @@ export {
   CATEGORIES,
 } from './activity/tracker'
 export { correctActivityCategory } from './activity/feedback'
+export {
+  addActivityCategory,
+  updateActivityCategory,
+  deleteActivityCategory,
+  isKnownCategory,
+  isEditableCategory,
+} from './activity/categories'
 export { exportActivity } from './activity/export'

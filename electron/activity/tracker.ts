@@ -20,6 +20,7 @@ import { buildSummary, withPendingCurrent, type SummaryDeps } from './aggregator
 import { CATEGORIES, FOCUS_OFF_PROJECT_DWELL_MAX_SEC, FOCUS_OFF_PROJECT_DWELL_MIN_SEC, POLL_MS } from './defaults'
 import { setExportHooks } from './export'
 import { setFeedbackHooks } from './feedback'
+import { setCategoryHooks } from './categories'
 import {
   daysDir,
   ensureDirs,
@@ -109,6 +110,11 @@ function ensureWired(): void {
     void emitSummary()
   })
   setFeedbackHooks({
+    emitSummary,
+    getActivitySummary,
+    getLastSummary: () => lastSummary,
+  })
+  setCategoryHooks({
     emitSummary,
     getActivitySummary,
     getLastSummary: () => lastSummary,

@@ -7,7 +7,7 @@ import type {
 } from '../../shared/types'
 import { categoryFromDomain, normalizeDomain } from './context'
 import { classify, titlePatternFromSample } from './classifier'
-import { CATEGORIES } from './defaults'
+import { isEditableCategory } from './categories'
 import { normalizeAppKey } from './normalize'
 import { getOpenSegment, getPendingSwitch } from './poll'
 import { todayKey } from './paths'
@@ -77,7 +77,7 @@ export async function correctActivityCategory(
   const scope: ActivityCorrectionScope =
     payload.scope === 'title' || payload.scope === 'domain' ? payload.scope : 'app'
 
-  if (!CATEGORIES.includes(payload.category) || payload.category === 'afk') {
+  if (!isEditableCategory(payload.category) || payload.category === 'afk') {
     return { ok: false, message: 'Catégorie invalide.' }
   }
 

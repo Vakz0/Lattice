@@ -30,6 +30,7 @@ Journal court des choix durables. Ajouter une ligne quand un invariant change ; 
 | D22 | 2026-08-04 | **Helpers purs partagés** `shared/dates.ts` + `shared/errors.ts` ; start focus UI via `startFocusForTask`. | Fin de la duplication dates/erreurs/start-focus. | Actif |
 | D23 | 2026-08-04 | **Tokens design** `--monitor-*` → `--surface` / `--glow-*` / `soft-pulse` (widget Monitor retiré). | Naming lié à une feature morte. | Actif |
 | D25 | 2026-08-04 | **Constitution agent unique** — `.cursor/rules/CURSOR.mdc` seul ; suppression de `CLAUDE.md` racine. | Fin du double source of truth après migration Cursor. | Actif |
+| D26 | 2026-08-13 | **Refonte UI Activité** + **catégories custom** : `ActivityCategory` = string ; builtins réservés ; customs dans `rules.json` (`customCategories`). Ancienne UI conservée en snapshot non branché (`ActivityWidgetLegacy` / `activity-legacy/`). | Besoin de buckets métier (ex. Finance) sans livrer de nouveaux builtins ; anneau pour lire la journée. | Actif |
 
 ## Ajouter une entrée
 

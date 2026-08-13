@@ -25,8 +25,16 @@
 
 - **Catalogue** — shell vide au premier lancement ; activez Calendrier, Tâches, Activité depuis le systray
 - **Notion** — calendrier semaine + tâches ouvertes sur le bureau (mode démo sans token)
-- **Activité** — temps focus local par app/catégorie (travail, divertissement…) avec export CSV/JSON ; [extension média](extensions/lattice-media/README.md) optionnelle pour éviter l’AFK pendant une vidéo — [guide](docs/fr/activity.md)
+- **Activité** — temps focus local par app/catégorie (travail, divertissement, catégories custom comme Finance…) avec export CSV/JSON ; [extension média](extensions/lattice-media/README.md) optionnelle pour éviter l’AFK pendant une vidéo — [guide](docs/fr/activity.md)
 - **Mises à jour** — installateur NSIS via GitHub Releases ; vérification au démarrage + boutons dans Paramètres (app et widgets externes)
+
+## Captures d’écran
+
+<p align="center">
+  <img src="docs/assets/screenshots/activity-overview.png" alt="Widget Activité — vue du jour avec anneau de catégories" width="420" />
+  &nbsp;
+  <img src="docs/assets/screenshots/activity-categories.png" alt="Widget Activité — catégories personnalisées (Finance)" width="420" />
+</p>
 
 ## Démarrage rapide
 

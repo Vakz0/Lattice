@@ -3,40 +3,11 @@ import type {
   ActivityCorrectionScope,
   ActivityDaySummary,
 } from '../../vite-env'
-import type { CategoryOption } from './format'
-
-function primaryLabel(current: NonNullable<ActivityDaySummary['current']>): string {
-  if (current.ignored) return 'Lattice'
-  if (current.contextKind === 'browser' && current.domain) {
-    // Prefer video title over "youtube.com"
-    if (current.title) {
-      const cleaned = current.title
-        .replace(/^\(\d+\)\s*/, '')
-        .replace(/\s*[-—–]\s*YouTube\s*$/i, '')
-        .replace(
-          /\s(?:—|–|-)\s(?:Google Chrome|Microsoft Edge|Brave|Mozilla Firefox|Opera|Vivaldi|Arc)$/i,
-          '',
-        )
-        .trim()
-      if (
-        /youtube\.com|youtu\.be/i.test(current.domain) &&
-        cleaned &&
-        !/^youtube$/i.test(cleaned)
-      ) {
-        return cleaned
-      }
-    }
-    return current.domain
-  }
-  return current.app
-}
+import { CATEGORY_LABELS, EDITABLE_CATEGORIES } from './format'
 
 function contextLine(current: NonNullable<ActivityDaySummary['current']>): string | null {
+  // When the primary label is already the domain, show the browser as secondary.
   if (current.domain && current.contextKind === 'browser') {
-    // When primary is the video title, show YouTube as secondary.
-    if (/youtube\.com|youtu\.be/i.test(current.domain) && current.title) {
-      return 'YouTube'
-    }
     return current.app
   }
   if (current.domain) return current.domain
@@ -48,10 +19,15 @@ function contextLine(current: NonNullable<ActivityDaySummary['current']>): strin
   return null
 }
 
+function primaryLabel(current: NonNullable<ActivityDaySummary['current']>): string {
+  if (current.ignored) return 'Lattice'
+  if (current.contextKind === 'browser' && current.domain) return current.domain
+  return current.app
+}
+
 type ActivityNowCardProps = {
   current: NonNullable<ActivityDaySummary['current']>
   busy: boolean
-  categoryOptions: CategoryOption[]
   onCorrect: (
     app: string,
     category: ActivityCategory,
@@ -61,16 +37,7 @@ type ActivityNowCardProps = {
   ) => void
 }
 
-export function ActivityNowCard({
-  current,
-  busy,
-  categoryOptions,
-  onCorrect,
-}: ActivityNowCardProps) {
-  const selectValue = categoryOptions.some((o) => o.id === current.category)
-    ? current.category
-    : 'other'
-
+export function ActivityNowCard({ current, busy, onCorrect }: ActivityNowCardProps) {
   return (
     <section className="activity-now" aria-label="Maintenant">
       <div className="activity-section-title">Maintenant</div>
@@ -111,24 +78,19 @@ export function ActivityNowCard({
               <select
                 className="activity-select"
                 disabled={busy}
-                value={selectValue}
+                value={current.category}
                 onChange={(e) => {
                   const next = e.target.value as ActivityCategory
-                  if (
-                    /youtube\.com|youtu\.be/i.test(current.domain ?? '') ||
-                    /youtube/i.test(current.title ?? '')
-                  ) {
-                    void onCorrect(current.app, next, 'title', current.title, current.domain)
-                  } else if (current.domain) {
+                  if (current.domain) {
                     void onCorrect(current.app, next, 'domain', current.title, current.domain)
                   } else {
                     void onCorrect(current.app, next, 'app', current.title)
                   }
                 }}
               >
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
+                {EDITABLE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_LABELS[c]}
                   </option>
                 ))}
               </select>

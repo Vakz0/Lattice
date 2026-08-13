@@ -10,6 +10,11 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { ActivityCategory, ActivitySiteBreakdown } from '../../shared/types'
+import { isSearchEngineDomain } from '../../shared/searchEngines'
+import {
+  isYoutubeHost,
+  youtubeTitleAllowlistKey,
+} from '../../shared/youtubeVideo'
 import { categoryFromDomain, normalizeDomain } from './context'
 import {
   activityDir,
@@ -37,7 +42,24 @@ type MediaState = {
   origin: string | null
 }
 
-type WatchDelta = { domain: string; deltaMs: number }
+type WatchDelta = { domain: string; deltaMs: number; title?: string | null }
+
+/** Watch map keys may be domains or `yt-title:…` / `youtube:…` video buckets. */
+function isVideoWatchKey(key: string): boolean {
+  return key.startsWith('yt-title:') || key.startsWith('youtube:')
+}
+
+function watchBucketKey(domain: string, title?: string | null): string {
+  if (isYoutubeHost(domain)) {
+    return youtubeTitleAllowlistKey(title) ?? normalizeDomain(domain)
+  }
+  return normalizeDomain(domain)
+}
+
+function normalizeWatchKey(key: string): string {
+  if (isVideoWatchKey(key)) return key
+  return normalizeDomain(key)
+}
 
 let state: MediaState = {
   playing: false,
@@ -174,6 +196,13 @@ export function getMediaPlaybackDomain(): string | null {
   }
 }
 
+/** Title of the currently playing media (Media Session / tab), if any. */
+export function getMediaPlaybackTitle(): string | null {
+  const { playing, title } = snapshot()
+  if (!playing) return null
+  return title
+}
+
 function loadWatchMapFromDisk(date: string): Record<string, number> {
   const file = assertWithin(daysDir(), watchPath(date))
   try {
@@ -182,7 +211,7 @@ function loadWatchMapFromDisk(date: string): Record<string, number> {
     const out: Record<string, number> = {}
     for (const [k, v] of Object.entries(raw)) {
       if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
-        out[normalizeDomain(k)] = Math.round(v)
+        out[normalizeWatchKey(k)] = Math.round(v)
       }
     }
     return out
@@ -205,14 +234,37 @@ export function getTopWatch(
   overrides?: Record<string, ActivityCategory> | null,
 ): ActivitySiteBreakdown[] {
   const map = readWatchMap(date)
-  return Object.entries(map)
-    .map(([domain, ms]) => {
-      const hit = categoryFromDomain(domain, overrides)
-      const category: ActivityCategory = hit?.category ?? 'entertainment'
-      return { domain, ms, category }
+  const youtubeMs = { ms: 0 }
+  const rows: ActivitySiteBreakdown[] = []
+
+  for (const [key, ms] of Object.entries(map)) {
+    if (isVideoWatchKey(key) || isYoutubeHost(key)) {
+      youtubeMs.ms += ms
+      continue
+    }
+    if (isSearchEngineDomain(key)) continue
+    const hit = categoryFromDomain(key, overrides)
+    const category: ActivityCategory = hit?.category ?? 'entertainment'
+    rows.push({
+      domain: key,
+      ms,
+      category,
+      correctionScope: 'domain',
+      showCategory: true,
     })
-    .sort((a, b) => b.ms - a.ms)
-    .slice(0, limit)
+  }
+
+  if (youtubeMs.ms > 0) {
+    rows.push({
+      domain: 'youtube.com',
+      ms: youtubeMs.ms,
+      category: 'other',
+      label: 'youtube',
+      showCategory: false,
+    })
+  }
+
+  return rows.sort((a, b) => b.ms - a.ms).slice(0, limit)
 }
 
 function scheduleWatchPersist(date: string): void {
@@ -250,10 +302,20 @@ function applyWatchDeltas(deltas: WatchDelta[], date = todayKey()): void {
   for (const entry of deltas) {
     const domain = normalizeDomain(entry.domain || '')
     if (!domain) continue
+    if (isSearchEngineDomain(domain)) continue
     let delta = Math.round(Number(entry.deltaMs))
     if (!Number.isFinite(delta) || delta <= 0) continue
     if (delta > MAX_DELTA_MS) delta = MAX_DELTA_MS
-    map[domain] = (map[domain] ?? 0) + delta
+    const key = watchBucketKey(domain, entry.title)
+    // Prefer per-video buckets; skip bare youtube.com when we have a title key.
+    if (
+      (domain === 'youtube.com' || domain === 'youtu.be') &&
+      key === domain &&
+      entry.title
+    ) {
+      continue
+    }
+    map[key] = (map[key] ?? 0) + delta
     changed = true
   }
   if (!changed) return
@@ -272,9 +334,13 @@ function parseWatchArray(raw: unknown): WatchDelta[] {
   const out: WatchDelta[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') continue
-    const row = item as { domain?: unknown; deltaMs?: unknown }
+    const row = item as { domain?: unknown; deltaMs?: unknown; title?: unknown }
     if (typeof row.domain !== 'string' || typeof row.deltaMs !== 'number') continue
-    out.push({ domain: row.domain, deltaMs: row.deltaMs })
+    out.push({
+      domain: row.domain,
+      deltaMs: row.deltaMs,
+      title: typeof row.title === 'string' ? row.title : null,
+    })
   }
   return out
 }

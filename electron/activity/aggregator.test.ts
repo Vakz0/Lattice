@@ -66,14 +66,16 @@ describe('buildSummary', () => {
     expect(summary.manualAfk).toBe(false)
   })
 
-  it('attributes browser+domain time to topSites, not topApps', () => {
+  it('aggregates YouTube as youtube without category UI; browsers get full cumulative time', () => {
     const segments = [
       seg({
         app: 'brave',
-        category: 'entertainment',
+        category: 'other',
         domain: 'youtube.com',
+        title: 'Cool tutorial - YouTube',
+        urlPath: '/watch?v=dQw4w9WgXcQ',
         contextKind: 'browser',
-        categorySource: 'domain',
+        categorySource: 'fallback',
       }),
       seg({
         app: 'brave',
@@ -85,14 +87,62 @@ describe('buildSummary', () => {
       }),
     ]
     const summary = buildSummary('2026-07-31', segments, null, deps)
-    expect(summary.byCategory.entertainment).toBe(60_000)
-    expect(summary.topSites[0]).toEqual({
+    expect(summary.byCategory.other).toBe(120_000)
+    expect(summary.topSites[0]).toMatchObject({
       domain: 'youtube.com',
+      label: 'youtube',
       ms: 60_000,
-      category: 'entertainment',
+      showCategory: false,
     })
-    expect(summary.topApps.map((a) => a.app)).toEqual(['brave'])
-    expect(summary.topApps[0]?.ms).toBe(60_000)
+    expect(summary.topApps[0]).toMatchObject({
+      app: 'brave',
+      ms: 120_000,
+      showCategory: false,
+    })
+  })
+
+  it('excludes search engines from active time', () => {
+    const segments = [
+      seg({
+        app: 'brave',
+        category: 'other',
+        domain: 'google.com',
+        contextKind: 'browser',
+      }),
+      seg({
+        app: 'cursor',
+        category: 'work',
+        start: '2026-07-31T10:01:00.000Z',
+        end: '2026-07-31T10:02:00.000Z',
+      }),
+    ]
+    const summary = buildSummary('2026-07-31', segments, null, deps)
+    expect(summary.totalMs).toBe(60_000)
+    expect(summary.topSites).toEqual([])
+    expect(summary.topApps[0]?.app).toBe('cursor')
+  })
+
+  it('collapses system apps into a single Système row', () => {
+    const segments = [
+      seg({ app: 'explorer', category: 'system' }),
+      seg({
+        app: 'searchhost',
+        category: 'system',
+        start: '2026-07-31T10:01:00.000Z',
+        end: '2026-07-31T10:02:00.000Z',
+      }),
+    ]
+    const summary = buildSummary('2026-07-31', segments, null, deps)
+    expect(summary.byCategory.system).toBe(120_000)
+    expect(summary.topApps).toEqual([
+      {
+        app: 'Système',
+        ms: 120_000,
+        category: 'system',
+        confidence: 'medium',
+        showCategory: false,
+      },
+    ])
   })
 
   it('applies current rules over stored segment categories', () => {

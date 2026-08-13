@@ -13,15 +13,21 @@ import type {
   ActivityTaskBreakdown,
   FocusSession,
 } from '../../shared/types'
+import { isSearchEngineDomain } from '../../shared/searchEngines'
+import { isYoutubeHost } from '../../shared/youtubeVideo'
 import {
   classify,
   type CompiledTitlePattern,
 } from './classifier'
+import { resolveCategory } from './categories'
+import { BROWSER_APPS } from './context'
 import { todayKey } from './paths'
 import {
   emptyByCategory,
   segmentMs,
 } from './segmentUtils'
+
+const SYSTEM_APP_BUCKET = 'Système'
 
 export type SummaryDeps = {
   settings: ActivitySettings
@@ -68,7 +74,7 @@ export function effectiveSegmentCategory(
     compiled,
   )
   return {
-    category: r.category,
+    category: resolveCategory(r.category, rules),
     confidence: r.confidence,
     source: r.source,
     matchedPattern: r.matchedPattern,
@@ -90,6 +96,7 @@ export function buildQuality(
   for (const seg of segments) {
     const ms = segmentMs(seg)
     if (ms <= 0 || seg.ignored || seg.category === 'afk') continue
+    if (isSearchEngineDomain(seg.domain)) continue
     const eff = effectiveSegmentCategory(seg, rules, compiled)
     if (eff.category === 'afk') continue
     activeMs += ms
@@ -154,12 +161,27 @@ export function buildSummary(
     segments.push(live)
   }
 
-  const byCategory = emptyByCategory()
+  const byCategory = emptyByCategory(deps.rules.customCategories)
   const appMs = new Map<
     string,
-    { ms: number; category: ActivityCategory; confidence: ActivityConfidence }
+    {
+      ms: number
+      category: ActivityCategory
+      confidence: ActivityConfidence
+      showCategory: boolean
+    }
   >()
-  const siteMs = new Map<string, { ms: number; category: ActivityCategory }>()
+  const siteMs = new Map<
+    string,
+    {
+      ms: number
+      category: ActivityCategory
+      label?: string
+      correctionScope?: ActivitySiteBreakdown['correctionScope']
+      correctionTitle?: string | null
+      showCategory: boolean
+    }
+  >()
   const projectMs = new Map<string, number>()
   const taskMs = new Map<string, { title: string; ms: number }>()
   let totalMs = 0
@@ -177,28 +199,59 @@ export function buildSummary(
       continue
     }
     if (seg.ignored) continue
+    // Search engines: not counted in active time / tops.
+    if (isSearchEngineDomain(seg.domain)) continue
+
     totalMs += ms
     byCategory[eff.category] = (byCategory[eff.category] ?? 0) + ms
-    // Browser time with a known site counts under the domain (Top sites), not "brave".
-    const skipAppBucket =
-      seg.contextKind === 'browser' && Boolean(seg.domain)
-    if (!skipAppBucket) {
-      const prev = appMs.get(seg.app) ?? {
+
+    // Always attribute to the app (browsers = full cumulative, including tab time).
+    {
+      const isBrowser = BROWSER_APPS.has(seg.app)
+      const appKey =
+        eff.category === 'system' && !isBrowser ? SYSTEM_APP_BUCKET : seg.app
+      const showCategory = !isBrowser && appKey !== SYSTEM_APP_BUCKET
+      const prev = appMs.get(appKey) ?? {
         ms: 0,
-        category: eff.category,
+        category: eff.category === 'system' ? 'system' : eff.category,
         confidence: eff.confidence,
+        showCategory,
       }
       prev.ms += ms
-      prev.category = eff.category
-      prev.confidence = eff.confidence
-      appMs.set(seg.app, prev)
+      if (showCategory) {
+        prev.category = eff.category
+        prev.confidence = eff.confidence
+      }
+      prev.showCategory = showCategory
+      appMs.set(appKey, prev)
     }
 
     if (seg.domain) {
-      const s = siteMs.get(seg.domain) ?? { ms: 0, category: eff.category }
-      s.ms += ms
-      s.category = eff.category
-      siteMs.set(seg.domain, s)
+      if (isYoutubeHost(seg.domain)) {
+        // One aggregated « youtube » row — no per-video label, no category UI.
+        const bucket = 'youtube.com'
+        const prev = siteMs.get(bucket) ?? {
+          ms: 0,
+          category: 'other',
+          label: 'youtube',
+          showCategory: false,
+        }
+        prev.ms += ms
+        prev.label = 'youtube'
+        prev.showCategory = false
+        siteMs.set(bucket, prev)
+      } else {
+        const prev = siteMs.get(seg.domain) ?? {
+          ms: 0,
+          category: eff.category,
+          correctionScope: 'domain' as const,
+          showCategory: true,
+        }
+        prev.ms += ms
+        prev.category = eff.category
+        prev.showCategory = true
+        siteMs.set(seg.domain, prev)
+      }
     }
     if (seg.projectName) {
       projectMs.set(seg.projectName, (projectMs.get(seg.projectName) ?? 0) + ms)
@@ -220,14 +273,23 @@ export function buildSummary(
       ms: v.ms,
       category: v.category,
       confidence: v.confidence,
+      showCategory: v.showCategory,
     }))
     .sort((a, b) => b.ms - a.ms)
     .slice(0, 8)
 
   const topSites: ActivitySiteBreakdown[] = [...siteMs.entries()]
-    .map(([domain, v]) => ({ domain, ms: v.ms, category: v.category }))
+    .map(([domain, v]) => ({
+      domain,
+      ms: v.ms,
+      category: v.category,
+      label: v.label,
+      correctionScope: v.correctionScope,
+      correctionTitle: v.correctionTitle,
+      showCategory: v.showCategory,
+    }))
     .sort((a, b) => b.ms - a.ms)
-    .slice(0, 6)
+    .slice(0, 8)
 
   const topProjects: ActivityProjectBreakdown[] = [...projectMs.entries()]
     .map(([projectName, ms]) => ({ projectName, ms }))

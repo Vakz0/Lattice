@@ -4,6 +4,7 @@ import type {
   ActivityConfidence,
   ActivityRules,
 } from '../../shared/types'
+import { isYoutubeHost } from '../../shared/youtubeVideo'
 import { BROWSER_APPS, categoryFromDomain } from './context'
 import { normalizeAppKey } from './normalize'
 
@@ -61,10 +62,34 @@ export function classify(
   const key = normalizeAppKey(app)
   const titleLower = (title ?? '').toLowerCase()
   const isBrowser = BROWSER_APPS.has(key)
+  // YouTube is classified per video (title rules), never as a single domain bucket.
+  const youtube = isYoutubeHost(domain)
 
-  // Browsers: site/video domain must win over an app override on chrome/brave/…
-  // otherwise correcting "Brave" once poisons every tab's work/entertainment quota.
-  const fromDomain = categoryFromDomain(domain, rules.userDomainOverrides)
+  const fromDomain = youtube
+    ? null
+    : categoryFromDomain(domain, rules.userDomainOverrides)
+
+  // Title patterns first for YouTube so each video can be work / studies / entertainment.
+  if (youtube) {
+    for (const rule of compiledTitlePatterns) {
+      if (rule.re.test(titleLower)) {
+        return {
+          category: rule.category,
+          source: 'title',
+          matchedPattern: rule.pattern,
+          confidence: 'high',
+        }
+      }
+    }
+    return {
+      category: 'other',
+      source: 'fallback',
+      matchedPattern: null,
+      confidence: 'low',
+    }
+  }
+
+  // Browsers: site domain must win over an app override on chrome/brave/…
   if (isBrowser && fromDomain) {
     return {
       category: fromDomain.category,
@@ -126,6 +151,23 @@ export function classify(
 export function titlePatternFromSample(titleSample: string): string | null {
   const trimmed = titleSample.trim()
   if (!trimmed) return null
+  // Prefer full YouTube video title (without " - YouTube") so one video ≠ whole site.
+  const ytClean = trimmed
+    .replace(/^\(\d+\)\s*/, '')
+    .replace(/\s*[-—–]\s*YouTube\s*$/i, '')
+    .replace(
+      /\s(?:—|–|-)\s(?:Google Chrome|Microsoft Edge|Brave|Mozilla Firefox|Opera|Vivaldi|Arc)$/i,
+      '',
+    )
+    .trim()
+  if (
+    /youtube/i.test(trimmed) &&
+    ytClean.length >= 3 &&
+    ytClean.length <= 120 &&
+    !/^youtube$/i.test(ytClean)
+  ) {
+    return ytClean.slice(0, 120)
+  }
   const domain = trimmed.match(
     /(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z]{2,})+)/i,
   )

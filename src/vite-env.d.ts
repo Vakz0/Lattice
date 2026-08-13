@@ -1,4 +1,5 @@
 import type {
+  ActivityCategoryMutationResult,
   ActivityCorrectionPayload,
   ActivityCorrectionResult,
   ActivityDaySummary,
@@ -32,11 +33,13 @@ import type {
 export type {
   ActivityBrowserDetail,
   ActivityCategory,
+  ActivityCategoryMutationResult,
   ActivityConfidence,
   ActivityCorrectionPayload,
   ActivityCorrectionResult,
   ActivityCorrectionScope,
   ActivityCurrentFocus,
+  ActivityCustomCategory,
   ActivityDaySummary,
   ActivityExportFormat,
   ActivityQualityMetrics,
@@ -129,6 +132,18 @@ export interface LatticeApi {
   correctActivityCategory: (
     payload: ActivityCorrectionPayload,
   ) => Promise<ActivityCorrectionResult>
+  addActivityCategory: (payload: {
+    label: string
+    color: string
+  }) => Promise<ActivityCategoryMutationResult>
+  updateActivityCategory: (payload: {
+    id: string
+    label?: string
+    color?: string
+  }) => Promise<ActivityCategoryMutationResult>
+  deleteActivityCategory: (payload: {
+    id: string
+  }) => Promise<ActivityCategoryMutationResult>
   clearActivityData: () => Promise<{
     ok: boolean
     message: string

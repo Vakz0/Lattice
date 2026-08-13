@@ -59,6 +59,8 @@ export type {
 export type {
   WidgetKind,
   ActivityCategory,
+  BuiltinActivityCategory,
+  ActivityCustomCategory,
   ActivityExportFormat,
   ActivityCategorySource,
   ActivityConfidence,
@@ -76,7 +78,9 @@ export type {
   ActivitySettings,
   ActivityTitlePattern,
   ActivityRules,
+  ActivityCategoryMutationResult,
   ActivityFeedbackEntry,
   ActivityCorrectionPayload,
   ActivityCorrectionResult,
 } from './activity'
+export { BUILTIN_CATEGORIES } from './activity'

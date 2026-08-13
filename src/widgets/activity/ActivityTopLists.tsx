@@ -3,11 +3,19 @@ import type {
   ActivityCorrectionScope,
   ActivityDaySummary,
 } from '../../vite-env'
-import { CATEGORY_LABELS, EDITABLE_CATEGORIES, formatShortDuration } from './format'
+import {
+  categoryColor,
+  categoryLabel,
+  formatShortDuration,
+  type CategoryMeta,
+  type CategoryOption,
+} from './format'
 
 type ActivityTopListsProps = {
   data: ActivityDaySummary
   busy: boolean
+  categoryMeta: CategoryMeta
+  categoryOptions: CategoryOption[]
   onCorrect: (
     app: string,
     category: ActivityCategory,
@@ -17,12 +25,18 @@ type ActivityTopListsProps = {
   ) => void
 }
 
-export function ActivityTopLists({ data, busy, onCorrect }: ActivityTopListsProps) {
+export function ActivityTopLists({
+  data,
+  busy,
+  categoryMeta,
+  categoryOptions,
+  onCorrect,
+}: ActivityTopListsProps) {
   const topTasks = data.topTasks ?? []
 
   return (
-    <>
-      <section className="activity-apps" aria-label="Applications">
+    <div className="activity-tops-grid">
+      <section className="activity-apps activity-card" aria-label="Applications">
         <div className="activity-section-title">Top apps</div>
         {data.topApps.length === 0 ? (
           <div className="activity-empty">
@@ -32,83 +46,137 @@ export function ActivityTopLists({ data, busy, onCorrect }: ActivityTopListsProp
           </div>
         ) : (
           <ul className="activity-app-list">
-            {data.topApps.map((appRow) => (
-              <li key={appRow.app} className="activity-app-row">
-                <span className="activity-app-name" title={appRow.app}>
-                  {appRow.app}
-                </span>
-                <select
-                  className="activity-select activity-select-compact"
-                  disabled={busy}
-                  value={appRow.category}
-                  aria-label={`Catégorie ${appRow.app}`}
-                  onChange={(e) => {
-                    void onCorrect(appRow.app, e.target.value as ActivityCategory, 'app')
-                  }}
+            {data.topApps.map((appRow) => {
+              const showCat = appRow.showCategory !== false
+              return (
+                <li
+                  key={appRow.app}
+                  className={`activity-app-row${showCat ? '' : ' activity-app-row-simple'}`}
                 >
-                  {EDITABLE_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORY_LABELS[c]}
-                    </option>
-                  ))}
-                </select>
-                <span className="activity-app-time">{formatShortDuration(appRow.ms)}</span>
-              </li>
-            ))}
+                  <span className="activity-app-name" title={appRow.app}>
+                    {appRow.app}
+                  </span>
+                  {showCat ? (
+                    <select
+                      className="activity-select activity-select-compact"
+                      disabled={busy}
+                      value={
+                        categoryOptions.some((o) => o.id === appRow.category)
+                          ? appRow.category
+                          : 'other'
+                      }
+                      aria-label={`Catégorie ${appRow.app}`}
+                      onChange={(e) => {
+                        void onCorrect(
+                          appRow.app,
+                          e.target.value as ActivityCategory,
+                          'app',
+                        )
+                      }}
+                    >
+                      {categoryOptions.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  <span className="activity-app-time">
+                    {formatShortDuration(appRow.ms)}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
 
       {data.topSites.length > 0 ? (
-        <section className="activity-apps" aria-label="Sites">
+        <section className="activity-apps activity-card" aria-label="Sites">
           <div className="activity-section-title">Top sites</div>
           <ul className="activity-app-list">
-            {data.topSites.map((site) => (
-              <li key={site.domain} className="activity-app-row">
-                <span className="activity-app-name" title={site.domain}>
-                  {site.domain}
-                </span>
-                <select
-                  className="activity-select activity-select-compact"
-                  disabled={busy}
-                  value={site.category}
-                  aria-label={`Catégorie ${site.domain}`}
-                  onChange={(e) => {
-                    void onCorrect(
-                      data.current?.app ?? 'browser',
-                      e.target.value as ActivityCategory,
-                      'domain',
-                      null,
-                      site.domain,
-                    )
-                  }}
+            {data.topSites.map((site) => {
+              const showCat = site.showCategory !== false
+              return (
+                <li
+                  key={site.domain}
+                  className={`activity-app-row${showCat ? '' : ' activity-app-row-simple'}`}
                 >
-                  {EDITABLE_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORY_LABELS[c]}
-                    </option>
-                  ))}
-                </select>
-                <span className="activity-app-time">{formatShortDuration(site.ms)}</span>
-              </li>
-            ))}
+                  <span
+                    className="activity-app-name"
+                    title={site.label ?? site.domain}
+                  >
+                    {site.label ?? site.domain}
+                  </span>
+                  {showCat ? (
+                    <select
+                      className="activity-select activity-select-compact"
+                      disabled={busy}
+                      value={
+                        categoryOptions.some((o) => o.id === site.category)
+                          ? site.category
+                          : 'other'
+                      }
+                      aria-label={`Catégorie ${site.label ?? site.domain}`}
+                      onChange={(e) => {
+                        const next = e.target.value as ActivityCategory
+                        const scope = site.correctionScope ?? 'domain'
+                        void onCorrect(
+                          data.current?.app ?? 'browser',
+                          next,
+                          scope,
+                          site.correctionTitle ?? site.label ?? null,
+                          scope === 'domain' ? site.domain : null,
+                        )
+                      }}
+                    >
+                      {categoryOptions.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  <span className="activity-app-time">
+                    {formatShortDuration(site.ms)}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </section>
       ) : null}
 
       {data.topWatch.length > 0 ? (
-        <section className="activity-apps" aria-label="Visionnage">
+        <section className="activity-apps activity-card" aria-label="Visionnage">
           <div className="activity-section-title">Visionnage</div>
           <ul className="activity-app-list">
             {data.topWatch.map((site) => (
-              <li key={site.domain} className="activity-app-row activity-app-row-simple">
-                <span className="activity-app-name" title={site.domain}>
-                  {site.domain}
+              <li
+                key={site.domain}
+                className="activity-app-row activity-app-row-simple"
+              >
+                <span
+                  className="activity-app-name"
+                  title={site.label ?? site.domain}
+                >
+                  {site.label ?? site.domain}
                 </span>
-                <span className={`activity-app-cat cat-${site.category}`}>
-                  {CATEGORY_LABELS[site.category]}
+                {site.showCategory !== false ? (
+                  <span className="activity-app-cat">
+                    <span
+                      className="activity-cat-dot"
+                      style={{
+                        background: categoryColor(site.category, categoryMeta),
+                      }}
+                      aria-hidden
+                    />
+                    {categoryLabel(site.category, categoryMeta)}
+                  </span>
+                ) : null}
+                <span className="activity-app-time">
+                  {formatShortDuration(site.ms)}
                 </span>
-                <span className="activity-app-time">{formatShortDuration(site.ms)}</span>
               </li>
             ))}
           </ul>
@@ -116,15 +184,20 @@ export function ActivityTopLists({ data, busy, onCorrect }: ActivityTopListsProp
       ) : null}
 
       {(data.topProjects?.length ?? 0) > 0 ? (
-        <section className="activity-apps" aria-label="Projets">
+        <section className="activity-apps activity-card" aria-label="Projets">
           <div className="activity-section-title">Top projets</div>
           <ul className="activity-app-list">
             {data.topProjects.map((proj) => (
-              <li key={proj.projectName} className="activity-app-row activity-app-row-simple">
+              <li
+                key={proj.projectName}
+                className="activity-app-row activity-app-row-simple"
+              >
                 <span className="activity-app-name" title={proj.projectName}>
                   {proj.projectName}
                 </span>
-                <span className="activity-app-time">{formatShortDuration(proj.ms)}</span>
+                <span className="activity-app-time">
+                  {formatShortDuration(proj.ms)}
+                </span>
               </li>
             ))}
           </ul>
@@ -132,20 +205,25 @@ export function ActivityTopLists({ data, busy, onCorrect }: ActivityTopListsProp
       ) : null}
 
       {topTasks.length > 0 ? (
-        <section className="activity-apps" aria-label="Tâches Notion">
+        <section className="activity-apps activity-card" aria-label="Tâches Notion">
           <div className="activity-section-title">Temps par tâche</div>
           <ul className="activity-app-list">
             {topTasks.map((task) => (
-              <li key={task.notionTaskId} className="activity-app-row activity-app-row-simple">
+              <li
+                key={task.notionTaskId}
+                className="activity-app-row activity-app-row-simple"
+              >
                 <span className="activity-app-name" title={task.title}>
                   {task.title}
                 </span>
-                <span className="activity-app-time">{formatShortDuration(task.ms)}</span>
+                <span className="activity-app-time">
+                  {formatShortDuration(task.ms)}
+                </span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
-    </>
+    </div>
   )
 }

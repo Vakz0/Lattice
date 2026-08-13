@@ -15,12 +15,12 @@ describe('classify', () => {
     expect(r.source).toBe('idle')
   })
 
-  it('prioritizes domain over user app overrides for browsers', () => {
+  it('prioritizes domain over user app overrides for browsers (non-YouTube)', () => {
     const rules = {
       ...DEFAULT_RULES,
       userAppOverrides: { brave: 'work' as const, chrome: 'work' as const },
     }
-    const r = classify('brave', 'YouTube', false, 'youtube.com', rules, compiled)
+    const r = classify('brave', 'Netflix', false, 'netflix.com', rules, compiled)
     expect(r.category).toBe('entertainment')
     expect(r.source).toBe('domain')
   })
@@ -46,8 +46,39 @@ describe('classify', () => {
     expect(r.source).toBe('user')
   })
 
-  it('uses domain before title patterns', () => {
-    const r = classify('chrome', 'something', false, 'youtube.com', DEFAULT_RULES, compiled)
+  it('classifies YouTube per video title, not as one entertainment domain', () => {
+    const unmarked = classify(
+      'chrome',
+      'Some lecture - YouTube',
+      false,
+      'youtube.com',
+      DEFAULT_RULES,
+      compiled,
+    )
+    expect(unmarked.category).toBe('other')
+    expect(unmarked.source).toBe('fallback')
+
+    const rules = {
+      ...DEFAULT_RULES,
+      titlePatterns: [
+        { pattern: 'Some lecture', category: 'studies' as const },
+        ...DEFAULT_RULES.titlePatterns,
+      ],
+    }
+    const tagged = classify(
+      'chrome',
+      'Some lecture - YouTube',
+      false,
+      'youtube.com',
+      rules,
+      rebuildCompiledPatterns(rules),
+    )
+    expect(tagged.category).toBe('studies')
+    expect(tagged.source).toBe('title')
+  })
+
+  it('uses domain before title patterns (non-YouTube)', () => {
+    const r = classify('chrome', 'something', false, 'netflix.com', DEFAULT_RULES, compiled)
     expect(r.category).toBe('entertainment')
     expect(r.source).toBe('domain')
   })

@@ -51,7 +51,11 @@ export function shouldBeginInterrupt(
     return { begin: false, nextOffSince: null }
   }
 
-  const dwellMs = Math.max(3, sample.dwellSec) * 1000
+  const dwellSec =
+    typeof sample.dwellSec === 'number' && Number.isFinite(sample.dwellSec)
+      ? Math.max(3, sample.dwellSec)
+      : 8
+  const dwellMs = dwellSec * 1000
   if (offSince === null || offSince === undefined) {
     return { begin: false, nextOffSince: sample.nowMs }
   }

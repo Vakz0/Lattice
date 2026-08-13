@@ -46,10 +46,8 @@ const EMPTY: ParsedContext = {
   urlPath: null,
 }
 
-/** domain (without www.) → category */
+/** domain (without www.) → category — not YouTube (per-video via title). */
 const DOMAIN_CATEGORY: Record<string, ActivityCategory> = {
-  'youtube.com': 'entertainment',
-  'youtu.be': 'entertainment',
   'netflix.com': 'entertainment',
   'twitch.tv': 'entertainment',
   'disneyplus.com': 'entertainment',

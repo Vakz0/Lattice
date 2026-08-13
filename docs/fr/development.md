@@ -62,8 +62,8 @@ Préférer les dossiers métier aux fichiers racine trop gros. Les façades raci
 | **`system-stats` / `temp-daemon`** | Plus de builtin après retrait Monitor (D07). Conservés pour widgets **externes** et aides systray ; sans consommateur, l’élévation temp reste gated. |
 | **`window.lattice`** | Seul pont renderer↔main (preload). Le renderer n’importe jamais `electron/`. |
 | **Poll activité** | Boucle ~2 s foreground-only dans `electron/activity/poll.ts` (D08). |
-| **Dwell segment** | `FOCUS_DWELL_MS` (3 s) : focus stable avant de committer un changement d’app. |
-| **Dwell hors-projet** | `focusOffProjectDwellSec` (défaut 8 s) : hors allowlist avant la fenêtre d’interruption. Horloge distincte du dwell segment. |
+| **Dwell segment** | `focusOffProjectDwellSec` (Options → Stabilité focus) : focus stable avant de committer un changement d’app. |
+| **Dwell hors-projet** | Même réglage : hors allowlist avant la fenêtre d’interruption. |
 | **Media bridge** | HTTP localhost + extension navigateur optionnelle (playback / AFK / visionnage) (D10). |
 | **Demo mode** | Token Notion absent/placeholder → store démo local (D13). |
 | **Power mode** | active / idle / sleep → intervalles refresh Notion & stats (D20). |
