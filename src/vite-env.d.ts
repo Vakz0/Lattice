@@ -108,9 +108,11 @@ export interface LatticeApi {
     id: string,
     enabled: boolean,
   ) => Promise<{ ok: boolean; widgets: CatalogWidgetInfo[] }>
-  openCatalog: () => Promise<void>
+  openCatalog: (opts?: { view?: CatalogView }) => Promise<void>
   closeCatalog: () => Promise<void>
   minimizeCatalog: () => Promise<void>
+  minimizeWidgetWindow: (id: string) => Promise<void>
+  closeWidgetWindow: (id: string) => Promise<void>
   toggleMaximizeCatalog: () => Promise<boolean>
   isCatalogMaximized: () => Promise<boolean>
   onCatalogMaximizedChanged: (cb: (maximized: boolean) => void) => () => void

@@ -18,26 +18,26 @@ Les défauts (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`) se renommen
 
 ## Sources secondaires (optionnel)
 
-Éditer `projectSources` dans `config.json` pour fusionner une autre base filtrée par relation projet :
+Éditer `projectSources` dans `config.json` pour fusionner une autre base de tâches :
+
+- **Base entière** : omettre `projectPageId` / `relationProperty`
+- **Filtrée par projet** : renseigner les deux (relation Notion)
 
 ```json
 "projectSources": [
   {
-    "databaseId": "https://www.notion.so/YOUR_TASKS_DATABASE_ID",
-    "projectPageId": "https://www.notion.so/YOUR_PROJECT_PAGE_ID",
-    "relationProperty": "Project",
-    "label": "Mon projet",
+    "databaseId": "https://www.notion.so/YOUR_OTHER_TASKS_DATABASE_ID",
+    "label": "My Task List",
     "properties": {
       "title": "Tâche",
-      "date": "Échéance",
-      "tag": "Type de tâche",
-      "status": "Priorité",
-      "workflowStatus": "Status",
-      "description": "Description"
+      "date": "Date",
+      "tag": "État",
+      "status": "Importance",
+      "urgency": "Urgence"
     },
     "filters": {
       "hideCompleted": true,
-      "completedStatusValues": ["Done"]
+      "completedStatusValues": []
     }
   }
 ]

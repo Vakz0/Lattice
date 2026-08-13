@@ -48,6 +48,32 @@ function SettingRow({
   )
 }
 
+function Switch({
+  checked,
+  disabled,
+  label,
+  onToggle,
+}: {
+  checked: boolean
+  disabled?: boolean
+  label: string
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      className={`activity-switch${checked ? ' is-on' : ''}`}
+      disabled={disabled}
+      onClick={() => void onToggle()}
+    >
+      <span className="activity-switch-thumb" aria-hidden />
+    </button>
+  )
+}
+
 export function ActivityOptionsPage({
   busy,
   paused,
@@ -95,28 +121,30 @@ export function ActivityOptionsPage({
       </div>
 
       <section className="activity-options-section activity-card" aria-label="Suivi">
-        <div className="activity-section-title">Suivi</div>
+        <div className="activity-section-title">Suivi rapide</div>
         <div className="activity-settings-list">
-          <SettingRow label="Pause" hint="Suspend le collecteur">
-            <button
-              type="button"
-              className={`activity-btn${paused ? '' : ' activity-btn-ghost'}`}
+          <SettingRow label="Pause" hint="Suspend le suivi">
+            <Switch
+              checked={paused}
               disabled={busy}
-              onClick={() => void onTogglePause()}
-            >
-              {paused ? 'En pause' : 'Actif'}
-            </button>
+              label="Pause"
+              onToggle={onTogglePause}
+            />
           </SettingRow>
-          <SettingRow label="AFK manuel" hint="Ignore souris, clavier et média">
-            <button
-              type="button"
-              className={`activity-btn${manualAfk ? '' : ' activity-btn-ghost'}`}
+          <SettingRow label="AFK" hint="Marquer comme absent">
+            <Switch
+              checked={manualAfk}
               disabled={busy || !settings}
-              onClick={() => void onToggleManualAfk()}
-            >
-              {manualAfk ? 'On' : 'Off'}
-            </button>
+              label="AFK manuel"
+              onToggle={onToggleManualAfk}
+            />
           </SettingRow>
+        </div>
+      </section>
+
+      <section className="activity-options-section activity-card" aria-label="Réglages avancés">
+        <div className="activity-section-title">Avancé</div>
+        <div className="activity-settings-list">
           <SettingRow label="Détail navigateur" hint="Domaine, URL complète ou off">
             <button
               type="button"

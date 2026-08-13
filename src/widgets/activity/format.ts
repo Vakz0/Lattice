@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type {
   ActivityCategory,
   ActivityCustomCategory,
@@ -37,13 +38,6 @@ export const BUILTIN_CATEGORY_COLORS: Record<string, string> = {
   other: '#9b7dba',
   afk: 'rgba(255, 255, 255, 0.28)',
 }
-
-/** @deprecated Prefer buildCategoryMeta — kept for legacy snapshot imports. */
-export const CATEGORY_ORDER = BUILTIN_CATEGORY_ORDER
-/** @deprecated Prefer buildCategoryMeta */
-export const EDITABLE_CATEGORIES = BUILTIN_CATEGORY_ORDER.filter((c) => c !== 'afk')
-/** @deprecated Prefer buildCategoryMeta */
-export const CATEGORY_LABELS = BUILTIN_CATEGORY_LABELS
 
 export type CategoryOption = {
   id: ActivityCategory
@@ -142,6 +136,25 @@ export function categoryColor(
   meta: CategoryMeta,
 ): string {
   return meta.colors[id] ?? '#9b7dba'
+}
+
+/** Tinted pill style for a category `<select>`, derived from its accent color. */
+export function categoryPillStyle(color: string): CSSProperties {
+  return {
+    background: `${color}22`,
+    borderColor: `${color}55`,
+    color,
+  }
+}
+
+/** Resolves the `<select>` value + matching option for a (possibly stale/removed) category id. */
+export function resolveCategoryOption(
+  categoryOptions: CategoryOption[],
+  categoryId: ActivityCategory,
+): { selectValue: ActivityCategory; selected: CategoryOption | undefined } {
+  const selectValue = categoryOptions.some((o) => o.id === categoryId) ? categoryId : 'other'
+  const selected = categoryOptions.find((o) => o.id === selectValue)
+  return { selectValue, selected }
 }
 
 export const AFK_PRESETS = [

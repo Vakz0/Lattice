@@ -21,8 +21,13 @@ export interface TaskSourceFilters {
 
 export interface ProjectSourceConfig {
   databaseId: string
-  projectPageId: string
-  relationProperty: string
+  /**
+   * Optional: when set with `relationProperty`, only pages related to this
+   * project page are fetched. When omitted/empty, the whole database is merged.
+   */
+  projectPageId?: string
+  /** Required only when filtering by `projectPageId`. */
+  relationProperty?: string
   label: string
   properties: TaskPropertyMapping
   filters: TaskSourceFilters

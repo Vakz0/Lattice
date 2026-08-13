@@ -151,7 +151,7 @@ export function ActivityCategoryManager({
                         className="activity-cat-chip-badge"
                         title="Catégorie de secours — non supprimable"
                       >
-                        fallback
+                        intégré
                       </span>
                     )}
                   </span>

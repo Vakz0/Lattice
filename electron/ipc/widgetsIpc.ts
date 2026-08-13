@@ -11,9 +11,12 @@ export function registerWidgetsIpc(deps: IpcDeps): void {
     const ok = await deps.setWidgetEnabledState(id, enabled)
     return { ok, widgets: deps.listCatalogWidgets() }
   })
-  ipcMain.handle('open-catalog', () => {
-    deps.openCatalog()
-  })
+  ipcMain.handle(
+    'open-catalog',
+    (_e, opts?: { view?: 'catalog' | 'settings' }) => {
+      deps.openCatalog(opts)
+    },
+  )
   ipcMain.handle('close-catalog', () => {
     const catalogWindow = deps.getCatalogWindow()
     if (catalogWindow && !catalogWindow.isDestroyed()) {

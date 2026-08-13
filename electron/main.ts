@@ -197,6 +197,7 @@ function registerIpc(): void {
     setWidgetEnabledState: lifecycle.setWidgetEnabledState,
     openCatalog: catalog.openCatalog,
     getCatalogWindow: catalog.getCatalogWindow,
+    hideWidget: widgetWindows.hideWidget,
     hideFocusInterruptWindow: focusInterrupt.hideFocusInterruptWindow,
     notionWidgetIds,
     sendTo,

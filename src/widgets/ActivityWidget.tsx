@@ -7,6 +7,7 @@ import { ActivityOptionsPage } from './activity/ActivityOptionsPage'
 import { ActivityTopLists } from './activity/ActivityTopLists'
 import { errMessage, formatDayTitle, formatDuration, todayKey } from './activity/format'
 import { useActivityWidget } from './activity/useActivityWidget'
+import { WidgetTitlebar } from './WidgetTitlebar'
 
 export function ActivityWidget() {
   const {
@@ -73,6 +74,7 @@ export function ActivityWidget() {
 
   return (
     <div className="widget-shell activity-shell drag-region">
+      <WidgetTitlebar />
       {!optionsOpen ? (
         <header className="activity-header">
           <div>

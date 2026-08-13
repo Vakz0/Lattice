@@ -3,7 +3,7 @@ import type {
   ActivityCorrectionScope,
   ActivityDaySummary,
 } from '../../vite-env'
-import type { CategoryOption } from './format'
+import { categoryPillStyle, resolveCategoryOption, type CategoryOption } from './format'
 
 function primaryLabel(current: NonNullable<ActivityDaySummary['current']>): string {
   if (current.ignored) return 'Lattice'
@@ -48,6 +48,26 @@ function contextLine(current: NonNullable<ActivityDaySummary['current']>): strin
   return null
 }
 
+/** Secondary line under the app/domain name: domain/project context, else the raw window title. */
+function nowSecondaryLine(current: NonNullable<ActivityDaySummary['current']>) {
+  const line = contextLine(current)
+  if (line) {
+    return (
+      <span className="activity-now-context" title={line}>
+        {line}
+      </span>
+    )
+  }
+  if (current.title) {
+    return (
+      <span className="activity-now-title" title={current.title}>
+        {current.title}
+      </span>
+    )
+  }
+  return null
+}
+
 type ActivityNowCardProps = {
   current: NonNullable<ActivityDaySummary['current']>
   busy: boolean
@@ -67,9 +87,7 @@ export function ActivityNowCard({
   categoryOptions,
   onCorrect,
 }: ActivityNowCardProps) {
-  const selectValue = categoryOptions.some((o) => o.id === current.category)
-    ? current.category
-    : 'other'
+  const { selectValue, selected } = resolveCategoryOption(categoryOptions, current.category)
 
   return (
     <section className="activity-now" aria-label="Maintenant">
@@ -84,34 +102,18 @@ export function ActivityNowCard({
               Widgets Lattice — non comptés
             </span>
           ) : (
-            (() => {
-              const line = contextLine(current)
-              if (line) {
-                return (
-                  <span className="activity-now-context" title={line}>
-                    {line}
-                  </span>
-                )
-              }
-              if (current.title) {
-                return (
-                  <span className="activity-now-title" title={current.title}>
-                    {current.title}
-                  </span>
-                )
-              }
-              return null
-            })()
+            nowSecondaryLine(current)
           )}
         </div>
         {!current.ignored ? (
           <>
-            <label className="activity-correct">
+            <label className="activity-correct activity-correct-pill">
               <span className="activity-correct-label">Catégorie</span>
               <select
-                className="activity-select"
+                className="activity-select activity-select-pill"
                 disabled={busy}
                 value={selectValue}
+                style={selected ? categoryPillStyle(selected.color) : undefined}
                 onChange={(e) => {
                   const next = e.target.value as ActivityCategory
                   if (

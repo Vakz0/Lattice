@@ -5,7 +5,8 @@ Append dated notes. Promote durable rules to `.cursor/rules/` / `docs/*/decision
 ## 2026-08-13
 
 - Activity tracking: YouTube is **per video** (title / video id), not one `youtube.com` entertainment bucket — remove domain default + generic title pattern `youtube`. Search engines (`google.com`, bing, ddg…) excluded from active time. System exes collapsed to a single Top apps row « Système ».
-- Activity: `ActivityCategory` is no longer a fixed union — it is a `string`. Builtins stay in `BUILTIN_CATEGORIES`; user categories live in `rules.json` as `customCategories: [{ id, label, color }]`. CRUD via IPC `add/update/delete-activity-category`. Deleting remaps rules → `other` and reclassifies today’s JSONL. UI ring + Options manager; legacy UI snapshot in `ActivityWidgetLegacy` / `activity-legacy/` (not registered).
+- Activity: `ActivityCategory` is no longer a fixed union — it is a `string`. Builtins stay in `BUILTIN_CATEGORIES`; user categories live in `rules.json` as `customCategories: [{ id, label, color }]`. CRUD via IPC `add/update/delete-activity-category`. Deleting remaps rules → `other` and reclassifies today’s JSONL. UI ring + Options manager. Legacy UI snapshot removed (2026-08-13 evening).
+- Activity UI aligned to README screenshots: shared `WidgetTitlebar` (settings / hide / close), hero row (total + ring + legend), tinted category pill selects, minimal footer with actions behind ⋯, Pause/AFK switches on Options page.
 
 ## 2026-08-10
 

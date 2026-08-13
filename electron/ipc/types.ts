@@ -25,6 +25,7 @@ export interface IpcDeps {
   setWidgetEnabledState: (id: string, enabled: boolean) => Promise<boolean>
   openCatalog: (opts?: { view?: 'catalog' | 'settings' }) => void
   getCatalogWindow: () => BrowserWindow | null
+  hideWidget: (id: string) => void
   hideFocusInterruptWindow: () => void
   notionWidgetIds: () => string[]
   sendTo: (ids: string[], channel: string, payload: unknown) => void

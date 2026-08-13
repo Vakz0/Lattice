@@ -7,6 +7,54 @@
   gap: 8px;
 }
 
+.activity-footer-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  min-height: 24px;
+}
+
+.activity-footer-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.activity-footer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-live);
+  box-shadow: 0 0 0 3px var(--status-live-ring);
+}
+
+.activity-footer-menu {
+  position: absolute;
+  right: 0;
+  width: 28px;
+  height: 24px;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+.activity-footer-menu:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.activity-footer-menu:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .activity-actions {
   display: flex;
   flex-wrap: wrap;

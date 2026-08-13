@@ -58,11 +58,15 @@ async function fetchProjectSourceTasks(
   client: Client,
   source: ProjectSourceConfig,
 ): Promise<NotionTask[]> {
-  const projectId = extractPageId(source.projectPageId)
-  const filter = {
-    property: source.relationProperty,
-    relation: { contains: projectId },
-  }
+  const projectPageId = source.projectPageId?.trim()
+  const relationProperty = source.relationProperty?.trim()
+  const filter =
+    projectPageId && relationProperty
+      ? {
+          property: relationProperty,
+          relation: { contains: extractPageId(projectPageId) },
+        }
+      : undefined
 
   const pages = await queryDatabasePages(
     client,

@@ -105,16 +105,19 @@ function isDone(
   importanceName: string | null,
   workflowName: string | null,
 ): boolean {
+  // `doneCheckbox` may be "" (fall back to the page's first checkbox property).
+  // Absent/undefined = no checkbox mapping at all.
   const checkboxName = ctx.properties.doneCheckbox
   if (checkboxName !== undefined) {
-    if (checkboxName in props) {
+    if (Object.prototype.hasOwnProperty.call(props, checkboxName)) {
       const checked = readCheckbox(props[checkboxName])
-      if (checked !== null && checked !== undefined) return checked
+      if (checked !== null) return checked
     }
-    for (const [key, value] of Object.entries(props)) {
-      const checked = readCheckbox(value)
-      if (checked === null || checked === undefined) continue
-      if (checkboxName === '' || key === checkboxName) return checked
+    if (checkboxName === '') {
+      for (const value of Object.values(props)) {
+        const checked = readCheckbox(value)
+        if (checked !== null) return checked
+      }
     }
   }
 

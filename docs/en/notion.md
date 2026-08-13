@@ -18,26 +18,26 @@ Defaults (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`) can be renamed 
 
 ## Secondary sources (optional)
 
-Edit `projectSources` in `config.json` to merge another database filtered by a project relation:
+Edit `projectSources` in `config.json` to merge another tasks database:
+
+- **Whole database**: omit `projectPageId` / `relationProperty`
+- **Filtered by project**: set both (Notion relation)
 
 ```json
 "projectSources": [
   {
-    "databaseId": "https://www.notion.so/YOUR_TASKS_DATABASE_ID",
-    "projectPageId": "https://www.notion.so/YOUR_PROJECT_PAGE_ID",
-    "relationProperty": "Project",
-    "label": "My project",
+    "databaseId": "https://www.notion.so/YOUR_OTHER_TASKS_DATABASE_ID",
+    "label": "My Task List",
     "properties": {
-      "title": "Task name",
-      "date": "Due",
-      "tag": "Type",
-      "status": "Priority",
-      "workflowStatus": "Status",
-      "description": "Description"
+      "title": "Tâche",
+      "date": "Date",
+      "tag": "État",
+      "status": "Importance",
+      "urgency": "Urgence"
     },
     "filters": {
       "hideCompleted": true,
-      "completedStatusValues": ["Done"]
+      "completedStatusValues": []
     }
   }
 ]

@@ -9,7 +9,8 @@ export function createCatalogApi() {
       enabled: boolean,
     ): Promise<{ ok: boolean; widgets: CatalogWidgetInfo[] }> =>
       ipcRenderer.invoke('set-widget-enabled', id, enabled),
-    openCatalog: (): Promise<void> => ipcRenderer.invoke('open-catalog'),
+    openCatalog: (opts?: { view?: 'catalog' | 'settings' }): Promise<void> =>
+      ipcRenderer.invoke('open-catalog', opts),
     closeCatalog: (): Promise<void> => ipcRenderer.invoke('close-catalog'),
     minimizeCatalog: (): Promise<void> => ipcRenderer.invoke('minimize-catalog'),
     toggleMaximizeCatalog: (): Promise<boolean> =>

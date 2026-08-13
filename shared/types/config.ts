@@ -25,7 +25,11 @@ export interface AppConfig {
   databaseId: string
   properties: TaskPropertyMapping
   filters: TaskSourceFilters
-  /** Sources secondaires (bases filtrées par relation projet) */
+  /**
+   * Secondary task databases merged into Calendar/Tasks.
+   * With `projectPageId` + `relationProperty`: filtered by project relation.
+   * Without: entire database is merged (e.g. a second personal task list).
+   */
   projectSources?: ProjectSourceConfig[]
   refreshIntervalSeconds: number
   launchAtStartup: boolean

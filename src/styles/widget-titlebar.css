@@ -1,0 +1,56 @@
+/* —— Shared frameless widget chrome —— */
+.widget-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px 6px 14px;
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+
+.widget-titlebar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.widget-titlebar-mark {
+  display: inline-flex;
+  color: var(--status-live);
+  flex-shrink: 0;
+}
+
+.widget-titlebar-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.widget-titlebar-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.widget-titlebar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+
+.widget-titlebar-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.widget-titlebar-btn-close:hover {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}

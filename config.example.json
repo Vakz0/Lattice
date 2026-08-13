@@ -16,6 +16,21 @@
   },
   "projectSources": [
     {
+      "databaseId": "https://www.notion.so/YOUR_OTHER_TASKS_DATABASE_ID",
+      "label": "My Task List",
+      "properties": {
+        "title": "Tâche",
+        "date": "Date",
+        "tag": "État",
+        "status": "Importance",
+        "urgency": "Urgence"
+      },
+      "filters": {
+        "hideCompleted": true,
+        "completedStatusValues": []
+      }
+    },
+    {
       "databaseId": "https://www.notion.so/YOUR_PROJECT_TASKS_DATABASE_ID",
       "projectPageId": "https://www.notion.so/YOUR_PROJECT_PAGE_ID",
       "relationProperty": "Project",

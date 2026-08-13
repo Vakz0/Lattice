@@ -6,7 +6,9 @@ import type {
 import {
   categoryColor,
   categoryLabel,
+  categoryPillStyle,
   formatShortDuration,
+  resolveCategoryOption,
   type CategoryMeta,
   type CategoryOption,
 } from './format'
@@ -37,7 +39,10 @@ export function ActivityTopLists({
   return (
     <div className="activity-tops-grid">
       <section className="activity-apps activity-card" aria-label="Applications">
-        <div className="activity-section-title">Top apps</div>
+        <div className="activity-section-head">
+          <div className="activity-section-title">Top apps</div>
+          <div className="activity-section-meta">Temps actif</div>
+        </div>
         {data.topApps.length === 0 ? (
           <div className="activity-empty">
             {data.paused
@@ -48,6 +53,10 @@ export function ActivityTopLists({
           <ul className="activity-app-list">
             {data.topApps.map((appRow) => {
               const showCat = appRow.showCategory !== false
+              const { selectValue, selected } = resolveCategoryOption(
+                categoryOptions,
+                appRow.category,
+              )
               return (
                 <li
                   key={appRow.app}
@@ -58,13 +67,10 @@ export function ActivityTopLists({
                   </span>
                   {showCat ? (
                     <select
-                      className="activity-select activity-select-compact"
+                      className="activity-select activity-select-compact activity-select-pill"
                       disabled={busy}
-                      value={
-                        categoryOptions.some((o) => o.id === appRow.category)
-                          ? appRow.category
-                          : 'other'
-                      }
+                      value={selectValue}
+                      style={selected ? categoryPillStyle(selected.color) : undefined}
                       aria-label={`Catégorie ${appRow.app}`}
                       onChange={(e) => {
                         void onCorrect(
@@ -93,10 +99,17 @@ export function ActivityTopLists({
 
       {data.topSites.length > 0 ? (
         <section className="activity-apps activity-card" aria-label="Sites">
-          <div className="activity-section-title">Top sites</div>
+          <div className="activity-section-head">
+            <div className="activity-section-title">Top sites</div>
+            <div className="activity-section-meta">Temps actif</div>
+          </div>
           <ul className="activity-app-list">
             {data.topSites.map((site) => {
               const showCat = site.showCategory !== false
+              const { selectValue, selected } = resolveCategoryOption(
+                categoryOptions,
+                site.category,
+              )
               return (
                 <li
                   key={site.domain}
@@ -110,13 +123,10 @@ export function ActivityTopLists({
                   </span>
                   {showCat ? (
                     <select
-                      className="activity-select activity-select-compact"
+                      className="activity-select activity-select-compact activity-select-pill"
                       disabled={busy}
-                      value={
-                        categoryOptions.some((o) => o.id === site.category)
-                          ? site.category
-                          : 'other'
-                      }
+                      value={selectValue}
+                      style={selected ? categoryPillStyle(selected.color) : undefined}
                       aria-label={`Catégorie ${site.label ?? site.domain}`}
                       onChange={(e) => {
                         const next = e.target.value as ActivityCategory

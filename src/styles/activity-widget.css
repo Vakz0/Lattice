@@ -169,8 +169,14 @@
 
 .activity-hero-split {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.activity-hero-copy {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .activity-hero-total {
@@ -184,6 +190,18 @@
   margin-top: 2px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.activity-hero-split .activity-ring-section {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 340px) {
+  .activity-hero-split {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .activity-quality {
@@ -201,13 +219,13 @@
 .activity-ring-layout {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .activity-ring-chart {
   position: relative;
-  width: 112px;
-  height: 112px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
 }
 
@@ -374,6 +392,32 @@
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 8px;
+}
+
+.activity-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.activity-section-head .activity-section-title {
+  margin-bottom: 0;
+}
+
+.activity-section-meta {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.activity-select-pill {
+  border-radius: var(--radius-pill);
+  font-weight: 650;
+  max-width: 140px;
 }
 
 .activity-empty {
@@ -613,4 +657,51 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-control);
   padding: 6px 8px;
+}
+
+.activity-text-input:focus {
+  outline: none;
+  border-color: var(--status-ok-border);
+}
+
+.activity-cat-add-form .activity-btn:not(.activity-btn-ghost) {
+  background: var(--status-ok-bg);
+  border-color: var(--status-ok-border);
+  color: var(--status-ok-text);
+}
+
+.activity-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+  border: 1px solid var(--border-subtle);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.activity-switch.is-on {
+  background: var(--status-ok-bg);
+  border-color: var(--status-ok-border);
+  justify-content: flex-end;
+}
+
+.activity-switch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.activity-switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-62);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.activity-switch.is-on .activity-switch-thumb {
+  background: var(--status-live);
 }
