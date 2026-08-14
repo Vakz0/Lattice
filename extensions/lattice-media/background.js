@@ -1,6 +1,17 @@
 const ENDPOINT = 'http://127.0.0.1:17384/v1/media'
-/** Must match electron/activityMediaBridge.ts MAX_DELTA_MS. */
+/** Must match electron/activity/mediaBridge.ts MAX_DELTA_MS. */
 const MAX_DELTA_MS = 30_000
+/**
+ * A frame's last report older than this is treated as not-playing even if it
+ * never sent an explicit "stopped" message. Content script heartbeats every
+ * 8s (HEARTBEAT_MS) while its tab is open, so in normal use this never
+ * triggers — it only guards a frame frozen/discarded by Chrome (backgrounded
+ * tab suspended, memory saver) without `chrome.tabs.onRemoved` firing, which
+ * would otherwise leave that frame's stale "playing" stuck forever (a
+ * service worker restart, by contrast, already wipes `tabFrames` below).
+ * Must match electron/activity/mediaBridge.ts MEDIA_TTL_MS.
+ */
+const FRAME_STALE_MS = 20_000
 
 /**
  * Per-tab, per-frame state. YouTube has many iframes: a false from an ad
@@ -47,9 +58,11 @@ function normalizeDomain(originOrHost) {
 function playingDomains() {
   /** @type {Map<string, { title: string | null, origin: string | null, at: number }>} */
   const map = new Map()
+  const now = Date.now()
   const states = [...tabFrames.values()].flatMap((frames) => [...frames.values()])
   for (const st of states) {
     if (!st.playing) continue
+    if (now - st.at > FRAME_STALE_MS) continue
     const domain = normalizeDomain(st.origin)
     if (!domain) continue
     const prev = map.get(domain)

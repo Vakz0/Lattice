@@ -40,6 +40,7 @@ export function ActivityWidget() {
     setOptionsOpen,
     setConfirmClear,
     setStatus,
+    setCategoryMenuOpen,
     goDay,
     togglePause,
     toggleManualAfk,
@@ -206,6 +207,7 @@ export function ActivityWidget() {
                 busy={busy}
                 categoryOptions={categoryOptions}
                 onCorrect={correct}
+                onMenuOpenChange={setCategoryMenuOpen}
               />
             ) : null}
 
@@ -215,6 +217,7 @@ export function ActivityWidget() {
               categoryMeta={categoryMeta}
               categoryOptions={categoryOptions}
               onCorrect={correct}
+              onMenuOpenChange={setCategoryMenuOpen}
             />
 
             <ActivityFocusJournal journal={journal} />

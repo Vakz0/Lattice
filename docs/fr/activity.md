@@ -113,7 +113,7 @@ Le widget affiche une section **Visionnage** (source extension, lecture réelle)
 
 Détails : [`extensions/lattice-media/README.md`](../../extensions/lattice-media/README.md).
 
-Si `playing` est signalé (heartbeat &lt; 45 s), l’idle clavier/souris **ne déclenche pas** l’AFK. Badge **Média** dans le widget.
+Si `playing` est signalé (heartbeat &lt; 20 s), l’idle clavier/souris **ne déclenche pas** l’AFK. Badge **Média** dans le widget. Un onglet/frame qui arrête de battre (onglet fermé, page tuée) est traité comme non-lecture après 20 s même sans message « stoppé » explicite — borne la durée pendant laquelle une vidéo obsolète peut sembler « actuelle ».
 
 ### Segment (champs utiles)
 

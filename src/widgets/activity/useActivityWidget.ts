@@ -35,6 +35,27 @@ export function useActivityWidget() {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const viewDateRef = useRef(viewDate)
   viewDateRef.current = viewDate
+  // While a category <select> has focus (best proxy we have for "the native
+  // dropdown might be open" — the DOM exposes no such signal), ignore live
+  // pushes: the OS foreground briefly switches to this window, the tracker
+  // classifies that as "ignored", and re-rendering would close the dropdown
+  // mid-pick. See CategorySelect.onMenuOpenChange.
+  const categoryMenuOpenRef = useRef(false)
+
+  function setCategoryMenuOpen(open: boolean) {
+    categoryMenuOpenRef.current = open
+    if (!open) {
+      void window.lattice
+        .getActivitySummary(viewDateRef.current)
+        .then((s) => {
+          // Guard against a fast reopen (new focus) racing this refetch.
+          if (viewDateRef.current === todayKey() && !categoryMenuOpenRef.current) {
+            setSummary(s)
+          }
+        })
+        .catch(() => undefined)
+    }
+  }
 
   function setStatus(message: string | null, isError = false) {
     setHint(message)
@@ -70,7 +91,7 @@ export function useActivityWidget() {
       })
       .catch(() => undefined)
     const offActivity = window.lattice.onActivityUpdated((s) => {
-      if (viewDateRef.current === todayKey()) {
+      if (viewDateRef.current === todayKey() && !categoryMenuOpenRef.current) {
         setSummary(s)
       }
       if (s.focusSession !== undefined) {
@@ -435,6 +456,7 @@ export function useActivityWidget() {
     setOptionsOpen,
     setConfirmClear,
     setStatus,
+    setCategoryMenuOpen,
     goDay,
     togglePause,
     toggleManualAfk,

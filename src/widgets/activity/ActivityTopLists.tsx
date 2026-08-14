@@ -3,12 +3,11 @@ import type {
   ActivityCorrectionScope,
   ActivityDaySummary,
 } from '../../vite-env'
+import { CategorySelect } from './CategorySelect'
 import {
   categoryColor,
   categoryLabel,
-  categoryPillStyle,
   formatShortDuration,
-  resolveCategoryOption,
   type CategoryMeta,
   type CategoryOption,
 } from './format'
@@ -25,6 +24,7 @@ type ActivityTopListsProps = {
     titleSample?: string | null,
     domain?: string | null,
   ) => void
+  onMenuOpenChange: (open: boolean) => void
 }
 
 export function ActivityTopLists({
@@ -33,6 +33,7 @@ export function ActivityTopLists({
   categoryMeta,
   categoryOptions,
   onCorrect,
+  onMenuOpenChange,
 }: ActivityTopListsProps) {
   const topTasks = data.topTasks ?? []
 
@@ -53,10 +54,6 @@ export function ActivityTopLists({
           <ul className="activity-app-list">
             {data.topApps.map((appRow) => {
               const showCat = appRow.showCategory !== false
-              const { selectValue, selected } = resolveCategoryOption(
-                categoryOptions,
-                appRow.category,
-              )
               return (
                 <li
                   key={appRow.app}
@@ -66,26 +63,15 @@ export function ActivityTopLists({
                     {appRow.app}
                   </span>
                   {showCat ? (
-                    <select
+                    <CategorySelect
                       className="activity-select activity-select-compact activity-select-pill"
                       disabled={busy}
-                      value={selectValue}
-                      style={selected ? categoryPillStyle(selected.color) : undefined}
-                      aria-label={`Catégorie ${appRow.app}`}
-                      onChange={(e) => {
-                        void onCorrect(
-                          appRow.app,
-                          e.target.value as ActivityCategory,
-                          'app',
-                        )
-                      }}
-                    >
-                      {categoryOptions.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
+                      value={appRow.category}
+                      options={categoryOptions}
+                      ariaLabel={`Catégorie ${appRow.app}`}
+                      onMenuOpenChange={onMenuOpenChange}
+                      onChange={(next) => void onCorrect(appRow.app, next, 'app')}
+                    />
                   ) : null}
                   <span className="activity-app-time">
                     {formatShortDuration(appRow.ms)}
@@ -106,10 +92,6 @@ export function ActivityTopLists({
           <ul className="activity-app-list">
             {data.topSites.map((site) => {
               const showCat = site.showCategory !== false
-              const { selectValue, selected } = resolveCategoryOption(
-                categoryOptions,
-                site.category,
-              )
               return (
                 <li
                   key={site.domain}
@@ -122,14 +104,14 @@ export function ActivityTopLists({
                     {site.label ?? site.domain}
                   </span>
                   {showCat ? (
-                    <select
+                    <CategorySelect
                       className="activity-select activity-select-compact activity-select-pill"
                       disabled={busy}
-                      value={selectValue}
-                      style={selected ? categoryPillStyle(selected.color) : undefined}
-                      aria-label={`Catégorie ${site.label ?? site.domain}`}
-                      onChange={(e) => {
-                        const next = e.target.value as ActivityCategory
+                      value={site.category}
+                      options={categoryOptions}
+                      ariaLabel={`Catégorie ${site.label ?? site.domain}`}
+                      onMenuOpenChange={onMenuOpenChange}
+                      onChange={(next) => {
                         const scope = site.correctionScope ?? 'domain'
                         void onCorrect(
                           data.current?.app ?? 'browser',
@@ -139,13 +121,7 @@ export function ActivityTopLists({
                           scope === 'domain' ? site.domain : null,
                         )
                       }}
-                    >
-                      {categoryOptions.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   ) : null}
                   <span className="activity-app-time">
                     {formatShortDuration(site.ms)}

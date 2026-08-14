@@ -113,7 +113,7 @@ The widget shows a **Visionnage** (Watch) section from the extension (real playb
 
 Details: [`extensions/lattice-media/README.md`](../../extensions/lattice-media/README.md).
 
-While `playing` is reported (heartbeat &lt; 45 s), keyboard/mouse idle **does not** trigger AFK. **Média** badge in the widget.
+While `playing` is reported (heartbeat &lt; 20 s), keyboard/mouse idle **does not** trigger AFK. **Média** badge in the widget. A frame/tab that stops heartbeating (closed tab, killed page) is treated as not-playing after 20 s even if no explicit "stopped" message arrived — bounds how long a stale video can look "current".
 
 ### Useful segment fields
 

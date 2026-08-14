@@ -3,7 +3,8 @@ import type {
   ActivityCorrectionScope,
   ActivityDaySummary,
 } from '../../vite-env'
-import { categoryPillStyle, resolveCategoryOption, type CategoryOption } from './format'
+import { CategorySelect } from './CategorySelect'
+import type { CategoryOption } from './format'
 
 function primaryLabel(current: NonNullable<ActivityDaySummary['current']>): string {
   if (current.ignored) return 'Lattice'
@@ -79,6 +80,7 @@ type ActivityNowCardProps = {
     titleSample?: string | null,
     domain?: string | null,
   ) => void
+  onMenuOpenChange: (open: boolean) => void
 }
 
 export function ActivityNowCard({
@@ -86,9 +88,8 @@ export function ActivityNowCard({
   busy,
   categoryOptions,
   onCorrect,
+  onMenuOpenChange,
 }: ActivityNowCardProps) {
-  const { selectValue, selected } = resolveCategoryOption(categoryOptions, current.category)
-
   return (
     <section className="activity-now" aria-label="Maintenant">
       <div className="activity-section-title">Maintenant</div>
@@ -109,13 +110,13 @@ export function ActivityNowCard({
           <>
             <label className="activity-correct activity-correct-pill">
               <span className="activity-correct-label">Catégorie</span>
-              <select
+              <CategorySelect
                 className="activity-select activity-select-pill"
                 disabled={busy}
-                value={selectValue}
-                style={selected ? categoryPillStyle(selected.color) : undefined}
-                onChange={(e) => {
-                  const next = e.target.value as ActivityCategory
+                value={current.category}
+                options={categoryOptions}
+                onMenuOpenChange={onMenuOpenChange}
+                onChange={(next) => {
                   if (
                     /youtube\.com|youtu\.be/i.test(current.domain ?? '') ||
                     /youtube/i.test(current.title ?? '')
@@ -127,13 +128,7 @@ export function ActivityNowCard({
                     void onCorrect(current.app, next, 'app', current.title)
                   }
                 }}
-              >
-                {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             {current.domain ? (
               <button

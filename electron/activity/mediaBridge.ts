@@ -30,8 +30,17 @@ import {
 const MEDIA_BRIDGE_PORT = 17_384
 const MEDIA_BRIDGE_HOST = '127.0.0.1'
 
-/** Heartbeat must refresh within this window or playing is considered stale. */
-const MEDIA_TTL_MS = 45_000
+/**
+ * Heartbeat must refresh within this window or playing is considered stale.
+ * Extension heartbeat is every 8s (`content.js` HEARTBEAT_MS), delivered via
+ * `chrome.runtime.sendMessage` — MV3 wakes/queues to the service worker for
+ * that, so this doesn't depend on the less reliable `setInterval` inside the
+ * worker itself. 20s tolerates ~2 missed beats while bounding how long a
+ * closed/backgrounded tab can keep reporting a stale video as "current" if
+ * a tab-close event is ever missed. Must match
+ * extensions/lattice-media/background.js FRAME_STALE_MS.
+ */
+const MEDIA_TTL_MS = 20_000
 /** Must match extensions/lattice-media/background.js MAX_DELTA_MS. */
 const MAX_DELTA_MS = 30_000
 

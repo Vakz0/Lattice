@@ -2,6 +2,11 @@
 
 Append dated notes. Promote durable rules to `.cursor/rules/` / `docs/*/decisions.md`.
 
+## 2026-08-14
+
+- Activity UI bug: opening a category `<select>` briefly puts the widget window in the OS foreground; the 2s poll (`poll.ts`) then classifies it as `ignored` (Lattice window), and the live `activity-updated` push re-renders `ActivityNowCard`/`ActivityTopLists`, unmounting the `<select>` and closing the native dropdown mid-pick. Fix: `useActivityWidget.setCategoryMenuOpen` freezes `onActivityUpdated`→`setSummary` while any category select has focus (`onFocus`/`onBlur`), and refetches once on close (guarded against a fast reopen racing that refetch). The three category `<select>`s (Now card + Top apps/sites) share one `activity/CategorySelect.tsx` — don't reintroduce a fourth inline copy.
+- Stale "Maintenant" video after closing a YouTube tab: `poll.ts` falls back to the media-bridge's last reported domain/title (`getMediaPlaybackDomain/Title`) when `active-url.exe`/title parsing can't resolve the real current tab. That state only self-heals via `MEDIA_TTL_MS` (was 45s) or an extension `chrome.tabs.onRemoved` — if that event is ever missed (e.g. MV3 service worker restart wiping `tabFrames` mid-flight, or one ad-iframe's `playing:true` never followed by `false`), the stale video can look "current" well beyond one heartbeat. Hardened both sides: `MEDIA_TTL_MS` 45s→20s (`electron/activity/mediaBridge.ts`) and per-frame age filtering `FRAME_STALE_MS`=20s in `extensions/lattice-media/background.js`'s `playingDomains()` (content heartbeats every 8s, so a real still-playing foreground tab never hits this).
+
 ## 2026-08-13
 
 - Activity tracking: YouTube is **per video** (title / video id), not one `youtube.com` entertainment bucket — remove domain default + generic title pattern `youtube`. Search engines (`google.com`, bing, ddg…) excluded from active time. System exes collapsed to a single Top apps row « Système ».
