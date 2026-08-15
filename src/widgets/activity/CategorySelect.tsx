@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { ActivityCategory } from '../../vite-env'
 import { categoryPillStyle, resolveCategoryOption, type CategoryOption } from './format'
 
@@ -29,6 +30,12 @@ export function CategorySelect({
 }: CategorySelectProps) {
   const { selectValue, selected } = resolveCategoryOption(options, value)
 
+  // Chromium often skips `blur` when a focused <select> becomes disabled
+  // (`busy` after a correction) — without this the freeze would stick forever.
+  useEffect(() => {
+    if (disabled) onMenuOpenChange(false)
+  }, [disabled, onMenuOpenChange])
+
   return (
     <select
       className={className}
@@ -37,8 +44,13 @@ export function CategorySelect({
       style={selected ? categoryPillStyle(selected.color) : undefined}
       aria-label={ariaLabel}
       onFocus={() => onMenuOpenChange(true)}
+      onMouseDown={() => onMenuOpenChange(true)}
       onBlur={() => onMenuOpenChange(false)}
-      onChange={(e) => onChange(e.target.value as ActivityCategory)}
+      onChange={(e) => {
+        const next = e.target.value as ActivityCategory
+        onMenuOpenChange(false)
+        onChange(next)
+      }}
     >
       {options.map((c) => (
         <option key={c.id} value={c.id}>

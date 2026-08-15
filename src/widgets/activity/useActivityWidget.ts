@@ -3,7 +3,7 @@
  * Subscribes to `activity-updated` / focus events from main; mutations go
  * through window.lattice (activity + focus APIs). Day navigation is local.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   ActivityBrowserDetail,
   ActivityCategory,
@@ -42,7 +42,8 @@ export function useActivityWidget() {
   // mid-pick. See CategorySelect.onMenuOpenChange.
   const categoryMenuOpenRef = useRef(false)
 
-  function setCategoryMenuOpen(open: boolean) {
+  const setCategoryMenuOpen = useCallback((open: boolean) => {
+    if (categoryMenuOpenRef.current === open) return
     categoryMenuOpenRef.current = open
     if (!open) {
       void window.lattice
@@ -55,7 +56,7 @@ export function useActivityWidget() {
         })
         .catch(() => undefined)
     }
-  }
+  }, [])
 
   function setStatus(message: string | null, isError = false) {
     setHint(message)
