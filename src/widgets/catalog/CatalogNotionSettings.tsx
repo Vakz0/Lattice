@@ -116,6 +116,7 @@ export function CatalogNotionSettings({
             ['urgency', 'Urgence (optionnel)'],
             ['workflowStatus', 'Statut workflow (optionnel)'],
             ['doneCheckbox', 'Case terminé (optionnel)'],
+            ['hoursWorked', 'Temps de travail (heures)'],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="catalog-field">

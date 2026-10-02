@@ -165,7 +165,9 @@ export function useActivityWidget() {
           row.ms > 0 ||
           row.id === 'work' ||
           row.id === 'studies' ||
-          row.id === 'entertainment',
+          row.id === 'entertainment' ||
+          row.id === 'other' ||
+          row.id === 'communication',
       )
   }, [data, categoryMeta])
 

@@ -82,6 +82,15 @@ function readDate(value: unknown): string | null {
   return date?.start?.slice(0, 10) ?? null
 }
 
+export function readNumber(value: unknown): number | null {
+  if (!value || typeof value !== 'object') return null
+  const obj = value as { type?: string; number?: number | null }
+  if (obj.type === 'number' && typeof obj.number === 'number' && Number.isFinite(obj.number)) {
+    return obj.number
+  }
+  return null
+}
+
 function readCheckbox(value: unknown): boolean | null {
   if (!value || typeof value !== 'object') return null
   const obj = value as { type?: string; checkbox?: boolean }
@@ -149,6 +158,9 @@ export function parsePage(page: Record<string, unknown>, ctx: ParseContext): Not
   const descriptionProp = properties.description
     ? props[properties.description]
     : undefined
+  const hoursProp = properties.hoursWorked
+    ? props[properties.hoursWorked]
+    : undefined
 
   let title = titleToPlain(titleProp)
   if (!title) title = richTextToPlain(titleProp)
@@ -184,6 +196,7 @@ export function parsePage(page: Record<string, unknown>, ctx: ParseContext): Not
     sourceLabel: ctx.sourceLabel ?? null,
     databaseId: ctx.databaseId,
     propertyMap: ctx.properties,
+    hoursWorked: hoursProp ? readNumber(hoursProp) : null,
   }
 }
 

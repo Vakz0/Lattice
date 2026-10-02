@@ -114,9 +114,11 @@ export function ActivityFocusPanel({
             className="activity-btn activity-btn-tiny"
             disabled={busy}
             onClick={onSaveAllowlist}
+            title="Enregistré aussi pour les prochaines sessions sur cette tâche"
           >
             Enregistrer
           </button>
+          <span className="activity-hint">Mémorisé pour cette tâche</span>
         </div>
       </div>
     </section>

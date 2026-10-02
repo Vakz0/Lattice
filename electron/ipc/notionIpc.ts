@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import {
+  addTaskHours,
   createTask,
   deleteTask,
   fetchPropertyOptions,
@@ -9,6 +10,8 @@ import {
 } from '../notion'
 import { hasValidNotionCredentials, saveConfig } from '../config'
 import type {
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   CreateTaskPayload,
   CreateTaskResult,
   DeleteTaskPayload,
@@ -74,6 +77,25 @@ export function registerNotionIpc(deps: IpcDeps): void {
       } else {
         deps.setTasksCache(tasksCache.map((t) => (t.id === result.task!.id ? result.task! : t)))
       }
+      deps.sendTo(deps.notionWidgetIds(), 'tasks-updated', deps.getTasksCache())
+      return result
+    },
+  )
+  ipcMain.handle(
+    'add-task-hours',
+    async (_e, payload: AddTaskHoursPayload): Promise<AddTaskHoursResult> => {
+      if (!deps.hasService('notion') || !payload?.pageId) {
+        return { ok: false, message: 'Service Notion indisponible.' }
+      }
+      const tasksCache = deps.getTasksCache()
+      const cached = tasksCache.find((t) => t.id === payload.pageId)
+      if (!cached) return { ok: false, message: 'Tâche introuvable.' }
+
+      const result = await addTaskHours(deps.getConfig(), payload, cached)
+      if (!result.ok || !result.task) return result
+
+      const updated = result.task
+      deps.setTasksCache(tasksCache.map((t) => (t.id === updated.id ? updated : t)))
       deps.sendTo(deps.notionWidgetIds(), 'tasks-updated', deps.getTasksCache())
       return result
     },
@@ -149,10 +171,17 @@ export function registerNotionIpc(deps: IpcDeps): void {
           'doneCheckbox',
           'workflowStatus',
           'description',
+          'hoursWorked',
         ] as const) {
           const value = patch.properties[key]
           if (typeof value === 'string') {
-            if (key === 'urgency' || key === 'doneCheckbox' || key === 'workflowStatus' || key === 'description') {
+            if (
+              key === 'urgency' ||
+              key === 'doneCheckbox' ||
+              key === 'workflowStatus' ||
+              key === 'description' ||
+              key === 'hoursWorked'
+            ) {
               next[key] = value
             } else if (value.trim()) {
               next[key] = value

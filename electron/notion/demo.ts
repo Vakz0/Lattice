@@ -14,6 +14,7 @@ export const DEMO_PROPERTY_MAP: TaskPropertyMapping = {
   status: 'Priority',
   urgency: 'Urgency',
   doneCheckbox: 'Done',
+  hoursWorked: 'Temps de travail',
 }
 
 /** Options de sélection factices, alignées sur les libellés utilisés dans `demoTasks()`. */
@@ -55,7 +56,11 @@ function demoTasks(): NotionTask[] {
     return d.toISOString().slice(0, 10)
   }
 
-  const base = { databaseId: DEMO_DATABASE_ID, propertyMap: DEMO_PROPERTY_MAP }
+  const base = {
+    databaseId: DEMO_DATABASE_ID,
+    propertyMap: DEMO_PROPERTY_MAP,
+    hoursWorked: null as number | null,
+  }
 
   return [
     {

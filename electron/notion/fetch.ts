@@ -125,7 +125,16 @@ export async function fetchNotionTasks(config: AppConfig): Promise<NotionTask[]>
   // intentional rate-limit: Notion API — one project source at a time
   for (const source of config.projectSources ?? []) {
     try {
-      projectBatches.push(await fetchProjectSourceTasks(client, source))
+      const properties = {
+        ...source.properties,
+        hoursWorked:
+          source.properties.hoursWorked ??
+          config.properties.hoursWorked ??
+          'Temps de travail',
+      }
+      projectBatches.push(
+        await fetchProjectSourceTasks(client, { ...source, properties }),
+      )
     } catch (err) {
       console.error(`Failed to fetch project source "${source.label}"`, err)
     }

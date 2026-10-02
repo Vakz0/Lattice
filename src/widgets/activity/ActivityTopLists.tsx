@@ -17,6 +17,8 @@ type ActivityTopListsProps = {
   busy: boolean
   categoryMeta: CategoryMeta
   categoryOptions: CategoryOption[]
+  /** Filtre sur apps / sites / visionnage (null = tout). */
+  categoryFilter: ActivityCategory | null
   onCorrect: (
     app: string,
     category: ActivityCategory,
@@ -32,10 +34,20 @@ export function ActivityTopLists({
   busy,
   categoryMeta,
   categoryOptions,
+  categoryFilter,
   onCorrect,
   onMenuOpenChange,
 }: ActivityTopListsProps) {
   const topTasks = data.topTasks ?? []
+  const topApps = categoryFilter
+    ? data.topApps.filter((row) => row.category === categoryFilter)
+    : data.topApps
+  const topSites = categoryFilter
+    ? data.topSites.filter((row) => row.category === categoryFilter)
+    : data.topSites
+  const topWatch = categoryFilter
+    ? data.topWatch.filter((row) => row.category === categoryFilter)
+    : data.topWatch
 
   return (
     <div className="activity-tops-grid">
@@ -44,15 +56,17 @@ export function ActivityTopLists({
           <div className="activity-section-title">Top apps</div>
           <div className="activity-section-meta">Temps actif</div>
         </div>
-        {data.topApps.length === 0 ? (
+        {topApps.length === 0 ? (
           <div className="activity-empty">
-            {data.paused
-              ? 'Suivi en pause — reprenez pour collecter des données.'
-              : 'En attente d’activité…'}
+            {categoryFilter
+              ? 'Aucune app dans cette catégorie.'
+              : data.paused
+                ? 'Suivi en pause — reprenez pour collecter des données.'
+                : 'En attente d’activité…'}
           </div>
         ) : (
           <ul className="activity-app-list">
-            {data.topApps.map((appRow) => {
+            {topApps.map((appRow) => {
               const showCat = appRow.showCategory !== false
               return (
                 <li
@@ -83,19 +97,71 @@ export function ActivityTopLists({
         )}
       </section>
 
-      {data.topSites.length > 0 ? (
+      {topSites.length > 0 || (categoryFilter && data.topSites.length > 0) ? (
         <section className="activity-apps activity-card" aria-label="Sites">
           <div className="activity-section-head">
             <div className="activity-section-title">Top sites</div>
             <div className="activity-section-meta">Temps actif</div>
           </div>
-          <ul className="activity-app-list">
-            {data.topSites.map((site) => {
-              const showCat = site.showCategory !== false
-              return (
+          {topSites.length === 0 ? (
+            <div className="activity-empty">Aucun site dans cette catégorie.</div>
+          ) : (
+            <ul className="activity-app-list">
+              {topSites.map((site) => {
+                const showCat = site.showCategory !== false
+                return (
+                  <li
+                    key={site.domain}
+                    className={`activity-app-row${showCat ? '' : ' activity-app-row-simple'}`}
+                  >
+                    <span
+                      className="activity-app-name"
+                      title={site.label ?? site.domain}
+                    >
+                      {site.label ?? site.domain}
+                    </span>
+                    {showCat ? (
+                      <CategorySelect
+                        className="activity-select activity-select-compact activity-select-pill"
+                        disabled={busy}
+                        value={site.category}
+                        options={categoryOptions}
+                        ariaLabel={`Catégorie ${site.label ?? site.domain}`}
+                        onMenuOpenChange={onMenuOpenChange}
+                        onChange={(next) => {
+                          const scope = site.correctionScope ?? 'domain'
+                          void onCorrect(
+                            data.current?.app ?? 'browser',
+                            next,
+                            scope,
+                            site.correctionTitle ?? site.label ?? null,
+                            scope === 'domain' ? site.domain : null,
+                          )
+                        }}
+                      />
+                    ) : null}
+                    <span className="activity-app-time">
+                      {formatShortDuration(site.ms)}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {topWatch.length > 0 || (categoryFilter && data.topWatch.length > 0) ? (
+        <section className="activity-apps activity-card" aria-label="Visionnage">
+          <div className="activity-section-title">Visionnage</div>
+          {topWatch.length === 0 ? (
+            <div className="activity-empty">Aucun visionnage dans cette catégorie.</div>
+          ) : (
+            <ul className="activity-app-list">
+              {topWatch.map((site) => (
                 <li
                   key={site.domain}
-                  className={`activity-app-row${showCat ? '' : ' activity-app-row-simple'}`}
+                  className="activity-app-row activity-app-row-simple"
                 >
                   <span
                     className="activity-app-name"
@@ -103,73 +169,29 @@ export function ActivityTopLists({
                   >
                     {site.label ?? site.domain}
                   </span>
-                  {showCat ? (
-                    <CategorySelect
-                      className="activity-select activity-select-compact activity-select-pill"
-                      disabled={busy}
-                      value={site.category}
-                      options={categoryOptions}
-                      ariaLabel={`Catégorie ${site.label ?? site.domain}`}
-                      onMenuOpenChange={onMenuOpenChange}
-                      onChange={(next) => {
-                        const scope = site.correctionScope ?? 'domain'
-                        void onCorrect(
-                          data.current?.app ?? 'browser',
-                          next,
-                          scope,
-                          site.correctionTitle ?? site.label ?? null,
-                          scope === 'domain' ? site.domain : null,
-                        )
-                      }}
-                    />
+                  {site.showCategory !== false ? (
+                    <span className="activity-app-cat">
+                      <span
+                        className="activity-cat-dot"
+                        style={{
+                          background: categoryColor(site.category, categoryMeta),
+                        }}
+                        aria-hidden
+                      />
+                      {categoryLabel(site.category, categoryMeta)}
+                    </span>
                   ) : null}
                   <span className="activity-app-time">
                     {formatShortDuration(site.ms)}
                   </span>
                 </li>
-              )
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
 
-      {data.topWatch.length > 0 ? (
-        <section className="activity-apps activity-card" aria-label="Visionnage">
-          <div className="activity-section-title">Visionnage</div>
-          <ul className="activity-app-list">
-            {data.topWatch.map((site) => (
-              <li
-                key={site.domain}
-                className="activity-app-row activity-app-row-simple"
-              >
-                <span
-                  className="activity-app-name"
-                  title={site.label ?? site.domain}
-                >
-                  {site.label ?? site.domain}
-                </span>
-                {site.showCategory !== false ? (
-                  <span className="activity-app-cat">
-                    <span
-                      className="activity-cat-dot"
-                      style={{
-                        background: categoryColor(site.category, categoryMeta),
-                      }}
-                      aria-hidden
-                    />
-                    {categoryLabel(site.category, categoryMeta)}
-                  </span>
-                ) : null}
-                <span className="activity-app-time">
-                  {formatShortDuration(site.ms)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {(data.topProjects?.length ?? 0) > 0 ? (
+      {!categoryFilter && (data.topProjects?.length ?? 0) > 0 ? (
         <section className="activity-apps activity-card" aria-label="Projets">
           <div className="activity-section-title">Top projets</div>
           <ul className="activity-app-list">
@@ -190,7 +212,7 @@ export function ActivityTopLists({
         </section>
       ) : null}
 
-      {topTasks.length > 0 ? (
+      {!categoryFilter && topTasks.length > 0 ? (
         <section className="activity-apps activity-card" aria-label="Tâches Notion">
           <div className="activity-section-title">Temps par tâche</div>
           <ul className="activity-app-list">

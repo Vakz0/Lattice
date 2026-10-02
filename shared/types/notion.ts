@@ -12,6 +12,8 @@ export interface TaskPropertyMapping {
   workflowStatus?: string
   /** Propriété texte pour la description */
   description?: string
+  /** Propriété Number pour le total d’heures (ex. Temps de travail) */
+  hoursWorked?: string
 }
 
 export interface TaskSourceFilters {
@@ -55,6 +57,8 @@ export interface NotionTask {
   databaseId: string
   /** Mapping de propriétés utilisé pour parser cette tâche (permet d'écrire vers la bonne propriété Notion). */
   propertyMap: TaskPropertyMapping
+  /** Total d’heures réalisées (propriété Number Notion), null si non mappée / absente. */
+  hoursWorked: number | null
 }
 
 /** Option d'une propriété select/status/multi_select Notion, prête à afficher (couleur déjà résolue). */
@@ -68,13 +72,27 @@ export interface UpdateTaskFieldPayload {
   databaseId: string
   /** Nom réel de la propriété Notion (ex. `task.propertyMap.tag`). */
   propertyName: string
-  /** Texte/date ISO pour title|rich_text|select|status|date, booléen pour checkbox, `null` pour vider. */
-  value: string | boolean | null
+  /** Texte/date ISO pour title|rich_text|select|status|date, booléen pour checkbox, number pour Number, `null` pour vider. */
+  value: string | boolean | number | null
 }
 
 export interface UpdateTaskFieldResult {
   ok: boolean
   task?: NotionTask
+  message?: string
+}
+
+export interface AddTaskHoursPayload {
+  pageId: string
+  databaseId: string
+  /** Delta d’heures à ajouter (positif). */
+  hours: number
+}
+
+export interface AddTaskHoursResult {
+  ok: boolean
+  task?: NotionTask
+  hoursWorked?: number
   message?: string
 }
 

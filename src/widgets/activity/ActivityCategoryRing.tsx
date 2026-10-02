@@ -11,6 +11,9 @@ type ActivityCategoryRingProps = {
   categoryRows: CategoryRow[]
   activeMs: number
   categoryMeta: CategoryMeta
+  /** Filtre actif sur les tops (null = toutes les catégories). */
+  selectedCategory: string | null
+  onSelectCategory: (categoryId: string | null) => void
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -37,6 +40,8 @@ function describeArc(
 export function ActivityCategoryRing({
   categoryRows,
   activeMs,
+  selectedCategory,
+  onSelectCategory,
 }: ActivityCategoryRingProps) {
   const slices = categoryRows.filter((r) => r.id !== 'afk' && r.ms > 0)
   const size = 132
@@ -62,6 +67,16 @@ export function ActivityCategoryRing({
       : []
 
   const afkRow = categoryRows.find((r) => r.id === 'afk')
+  const legendRows = categoryRows.filter(
+    (r) =>
+      r.id !== 'afk' &&
+      (r.ms > 0 ||
+        ['work', 'studies', 'entertainment', 'other', 'communication'].includes(r.id)),
+  )
+
+  function toggleCategory(id: string) {
+    onSelectCategory(selectedCategory === id ? null : id)
+  }
 
   return (
     <section className="activity-ring-section" aria-label="Par catégorie">
@@ -84,6 +99,9 @@ export function ActivityCategoryRing({
                 stroke={arc.color}
                 strokeWidth={stroke}
                 strokeLinecap="butt"
+                opacity={
+                  selectedCategory && selectedCategory !== arc.id ? 0.28 : 1
+                }
               />
             ))}
           </svg>
@@ -91,13 +109,24 @@ export function ActivityCategoryRing({
             <div className="activity-ring-empty">—</div>
           ) : null}
         </div>
-        <ul className="activity-ring-legend">
-          {categoryRows
-            .filter((r) => r.id !== 'afk' && (r.ms > 0 || ['work', 'studies', 'entertainment'].includes(r.id)))
-            .map((row) => {
-              const pct = activeMs > 0 ? Math.round((row.ms / activeMs) * 100) : 0
-              return (
-                <li key={row.id} className="activity-ring-legend-row">
+        <ul className="activity-ring-legend" role="listbox" aria-label="Filtrer par catégorie">
+          {legendRows.map((row) => {
+            const pct = activeMs > 0 ? Math.round((row.ms / activeMs) * 100) : 0
+            const selected = selectedCategory === row.id
+            const dimmed = Boolean(selectedCategory && !selected)
+            return (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className={`activity-ring-legend-row${selected ? ' is-selected' : ''}${dimmed ? ' is-dimmed' : ''}`}
+                  aria-pressed={selected}
+                  title={
+                    selected
+                      ? 'Afficher toutes les catégories'
+                      : `Filtrer : ${row.label}`
+                  }
+                  onClick={() => toggleCategory(row.id)}
+                >
                   <span
                     className="activity-cat-dot"
                     style={{ background: row.color }}
@@ -108,9 +137,10 @@ export function ActivityCategoryRing({
                     {formatShortDuration(row.ms)}
                     {row.ms > 0 ? ` · ${pct}%` : ''}
                   </span>
-                </li>
-              )
-            })}
+                </button>
+              </li>
+            )
+          })}
           {afkRow && afkRow.ms > 0 ? (
             <li className="activity-ring-legend-row is-afk">
               <span

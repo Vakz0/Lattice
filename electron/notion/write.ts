@@ -1,5 +1,7 @@
 import { Client } from '@notionhq/client'
 import type {
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   AppConfig,
   CreateTaskPayload,
   CreateTaskResult,
@@ -19,12 +21,16 @@ import {
   getDemoTasks,
   toOptionList,
 } from './demo'
-import { type ParseContext, NOTION_COLOR_STYLES, parsePage } from './parse'
+import { type ParseContext, NOTION_COLOR_STYLES, parsePage, readNumber } from './parse'
 import {
   type DbProp,
   optionsFromDbProp,
   retrieveDbProperties,
 } from './properties'
+
+export function roundHours(hours: number): number {
+  return Math.round(hours * 100) / 100
+}
 
 function richTextValue(text: string | null) {
   if (!text) return []
@@ -34,7 +40,7 @@ function richTextValue(text: string | null) {
 /** Pure property payload builder — exported for unit tests. */
 export function buildPropertyWrite(
   type: string,
-  value: string | boolean | null,
+  value: string | boolean | number | null,
 ): Record<string, unknown> | null {
   if (type === 'title') {
     return { title: richTextValue(typeof value === 'string' ? value : null) }
@@ -48,6 +54,12 @@ export function buildPropertyWrite(
   }
   if (type === 'checkbox') {
     return { checkbox: Boolean(value) }
+  }
+  if (type === 'number') {
+    if (value === null || value === undefined || value === '') return { number: null }
+    const n = typeof value === 'number' ? value : Number(value)
+    if (!Number.isFinite(n)) return { number: null }
+    return { number: n }
   }
   if (type === 'select') {
     if (value === null || value === undefined || value === '') return { select: null }
@@ -76,7 +88,7 @@ function bgFromFg(fg: string | null): string | null {
 function applyLocalFieldUpdate(
   task: NotionTask,
   propertyName: string,
-  value: string | boolean | null,
+  value: string | boolean | number | null,
   options?: NotionPropertyOption[],
 ): NotionTask {
   const next = { ...task }
@@ -110,6 +122,15 @@ function applyLocalFieldUpdate(
     next.description = typeof value === 'string' && value.trim() ? value : null
   } else if (propertyName === '__page_body__') {
     next.description = typeof value === 'string' && value.trim() ? value : null
+  } else if (map.hoursWorked && propertyName === map.hoursWorked) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      next.hoursWorked = roundHours(value)
+    } else if (typeof value === 'string' && value.trim()) {
+      const n = Number(value)
+      next.hoursWorked = Number.isFinite(n) ? roundHours(n) : null
+    } else {
+      next.hoursWorked = null
+    }
   }
 
   return next
@@ -278,7 +299,9 @@ export async function updateTaskField(
 
     const response = await client.pages.update({
       page_id: pageId,
-      properties: { [writeKey]: write },
+      properties: { [writeKey]: write } as Parameters<
+        Client['pages']['update']
+      >[0]['properties'],
     })
 
     const ctx: ParseContext = {
@@ -301,6 +324,68 @@ export async function updateTaskField(
     console.error('Failed to update task field', err)
     return { ok: false, message }
   }
+}
+
+/** Incrémente la propriété Number « heures » (lecture fraîche du total, puis `updateTaskField`). */
+export async function addTaskHours(
+  config: AppConfig,
+  payload: AddTaskHoursPayload,
+  task: NotionTask,
+): Promise<AddTaskHoursResult> {
+  const delta = roundHours(payload.hours)
+  if (!payload.pageId || !Number.isFinite(delta) || delta <= 0) {
+    return { ok: false, message: 'Delta d’heures invalide.' }
+  }
+
+  const propName =
+    task.propertyMap.hoursWorked ??
+    config.properties.hoursWorked ??
+    'Temps de travail'
+  const taskForWrite: NotionTask = {
+    ...task,
+    propertyMap: { ...task.propertyMap, hoursWorked: propName },
+  }
+
+  let current = 0
+  const isDemo =
+    config.demoMode || !config.notionToken || payload.pageId.startsWith('demo-')
+  if (isDemo) {
+    const store = getDemoTasks()
+    const idx = store.findIndex((t) => t.id === payload.pageId)
+    if (idx < 0) return { ok: false, message: 'Tâche introuvable.' }
+    current = store[idx].hoursWorked ?? 0
+  } else {
+    try {
+      const client = new Client({ auth: config.notionToken })
+      const page = await client.pages.retrieve({ page_id: payload.pageId })
+      const pageProps =
+        'properties' in page && page.properties && typeof page.properties === 'object'
+          ? (page.properties as Record<string, unknown>)
+          : {}
+      current = readNumber(pageProps[propName]) ?? 0
+    } catch (err) {
+      const message = errorMessage(err, 'Échec de la lecture des heures.')
+      console.error('Failed to read task hours', err)
+      return { ok: false, message }
+    }
+  }
+
+  const nextTotal = roundHours(current + delta)
+  const result = await updateTaskField(
+    config,
+    {
+      pageId: payload.pageId,
+      databaseId: payload.databaseId || task.databaseId,
+      propertyName: propName,
+      value: nextTotal,
+    },
+    taskForWrite,
+  )
+  if (!result.ok || !result.task) {
+    return { ok: false, message: result.message ?? 'Échec de la mise à jour des heures.' }
+  }
+  if (result.task.hoursWorked == null) result.task.hoursWorked = nextTotal
+  return { ok: true, task: result.task, hoursWorked: result.task.hoursWorked }
 }
 
 /** Crée une tâche dans la base principale (titre + date). */
@@ -334,6 +419,7 @@ export async function createTask(
       sourceLabel: null,
       databaseId: DEMO_DATABASE_ID,
       propertyMap: DEMO_PROPERTY_MAP,
+      hoursWorked: null,
     }
     getDemoTasks().push(task)
     return { ok: true, task }

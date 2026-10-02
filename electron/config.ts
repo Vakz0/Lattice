@@ -17,6 +17,7 @@ const DEFAULT_CONFIG: AppConfig = {
     status: 'Priority',
     urgency: 'Urgency',
     doneCheckbox: 'Done',
+    hoursWorked: 'Temps de travail',
   },
   filters: {
     hideCompleted: true,

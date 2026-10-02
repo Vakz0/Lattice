@@ -9,6 +9,7 @@ import { SkeletonLines } from './Skeleton'
 import {
   IconCalendar,
   IconCheckbox,
+  IconClock,
   IconRelation,
   IconSelect,
   IconStatus,
@@ -16,6 +17,7 @@ import {
 import { PropRow, SelectField } from './taskDetail/PropertyFields'
 import { TaskDetailToolbar } from './taskDetail/TaskDetailToolbar'
 import { useTaskFocusSession } from './taskDetail/useTaskFocusSession'
+import { formatHours } from './formatHours'
 
 export function TaskDetailPanel({
   task,
@@ -33,6 +35,8 @@ export function TaskDetailPanel({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { focusBusy, focusHint, focusHintError, handleStartFocus } = useTaskFocusSession(task)
+  const [hoursDraft, setHoursDraft] = useState('')
+  const [hoursBusy, setHoursBusy] = useState(false)
   const [optionsByProp, setOptionsByProp] = useState<Record<string, NotionPropertyOption[]>>({})
   const [loadingOptions, setLoadingOptions] = useState<string | null>(null)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
@@ -42,6 +46,7 @@ export function TaskDetailPanel({
     setDescription(task.description ?? '')
     setError(null)
     setConfirmDelete(false)
+    setHoursDraft('')
   }, [task])
 
   useEffect(() => {
@@ -169,6 +174,34 @@ export function TaskDetailPanel({
     }
   }
 
+  async function handleAddHours() {
+    const parsed = Number(String(hoursDraft).replace(',', '.'))
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError('Indiquez un nombre d’heures positif (ex. 1.5).')
+      return
+    }
+    setHoursBusy(true)
+    setError(null)
+    try {
+      const result = await window.lattice.addTaskHours({
+        pageId: draft.id,
+        databaseId: draft.databaseId,
+        hours: parsed,
+      })
+      if (!result.ok || !result.task) {
+        setError(result.message ?? 'Échec de l’ajout d’heures')
+        return
+      }
+      setDraft(result.task)
+      setHoursDraft('')
+      onTaskUpdated?.(result.task)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setHoursBusy(false)
+    }
+  }
+
   async function handleDelete() {
     if (saving) return
     if (!confirmDelete) {
@@ -265,6 +298,41 @@ export function TaskDetailPanel({
                 void saveField(map.date, next)
               }}
             />
+          </PropRow>
+
+          <PropRow icon={<IconClock />} label="Temps">
+            <div className="detail-hours-row">
+              <span className="detail-plain">
+                {draft.hoursWorked != null && draft.hoursWorked > 0
+                  ? formatHours(draft.hoursWorked)
+                  : '0 h'}
+              </span>
+              <input
+                className="detail-hours-input"
+                type="number"
+                min="0"
+                step="0.25"
+                placeholder="+ h"
+                value={hoursDraft}
+                disabled={saving || hoursBusy}
+                aria-label="Heures à ajouter"
+                onChange={(e) => setHoursDraft(e.target.value)}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    void handleAddHours()
+                  }
+                }}
+              />
+              <button
+                className="detail-hours-add"
+                type="button"
+                disabled={saving || hoursBusy || !hoursDraft.trim()}
+                onClick={() => void handleAddHours()}
+              >
+                {hoursBusy ? '…' : 'Ajouter'}
+              </button>
+            </div>
           </PropRow>
 
           <PropRow icon={<IconRelation />} label="Projet">

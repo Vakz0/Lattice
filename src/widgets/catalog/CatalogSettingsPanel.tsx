@@ -43,6 +43,7 @@ export function CatalogSettingsPanel({
     status: 'Priority',
     urgency: 'Urgency',
     doneCheckbox: 'Done',
+    hoursWorked: 'Temps de travail',
   })
   const [filters, setFilters] = useState<TaskSourceFilters>({
     hideCompleted: true,

@@ -170,6 +170,50 @@
   cursor: pointer;
 }
 
+.detail-hours-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.detail-hours-input {
+  width: 64px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  color-scheme: dark;
+}
+
+.detail-hours-input:disabled {
+  opacity: 0.5;
+}
+
+.detail-hours-add {
+  padding: 2px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-hours-add:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.detail-hours-add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .detail-select {
   position: relative;
   min-width: 0;

@@ -25,7 +25,13 @@ describe('buildPropertyWrite', () => {
     expect(buildPropertyWrite('status', null)).toEqual({ status: null })
   })
 
+  it('builds number values', () => {
+    expect(buildPropertyWrite('number', 1.5)).toEqual({ number: 1.5 })
+    expect(buildPropertyWrite('number', '2')).toEqual({ number: 2 })
+    expect(buildPropertyWrite('number', '')).toEqual({ number: null })
+  })
+
   it('returns null for unknown types', () => {
-    expect(buildPropertyWrite('number', '1')).toBeNull()
+    expect(buildPropertyWrite('formula', '1')).toBeNull()
   })
 })

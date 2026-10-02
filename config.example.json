@@ -8,7 +8,8 @@
     "status": "Priority",
     "urgency": "Urgency",
     "workflowStatus": "Status",
-    "doneCheckbox": "Done"
+    "doneCheckbox": "Done",
+    "hoursWorked": "Temps de travail"
   },
   "filters": {
     "hideCompleted": true,

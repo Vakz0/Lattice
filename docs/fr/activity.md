@@ -74,12 +74,14 @@ But : travailler **uniquement** sur une tâche Notion, chronométrer ce temps, e
 1. Widget **Activité** activé (service `activity-tracker`)
 2. Depuis **Tâches** / **Calendrier** : menu contextuel ou détail → **Travailler dessus**
 3. Le bandeau **Session focus** dans Activité montre la tâche, l’état (active / pause / interrompue) et l’allowlist (apps, domaines, projets IDE)
-4. Hors allowlist pendant le délai configuré (défaut **8 s**, option `Focus: Ns`) → fenêtre d’interruption : expliquer ce que vous faites, puis reprendre / autoriser cette fois / pause / terminer
+4. Hors allowlist pendant le délai configuré (défaut **8 s**, option `Focus: Ns`) → fenêtre d’interruption : expliquer ce que vous faites, puis reprendre / autoriser pour la session / **toujours pour cette tâche** / pause / terminer
 5. Les notes vont dans `focus-journal.jsonl` ; le temps imputé apparaît dans **Temps par tâche** et l’export
 
-Allowlist initiale : apps travail courantes (`cursor`, `code`, `notion`…) + contexte focus courant (projet IDE / domaine). Les widgets Lattice et l’AFK ne déclenchent pas d’interruption.
+Allowlist initiale : apps travail courantes (`cursor`, `code`, `notion`…) + contexte focus courant (projet IDE / domaine) + **autorisations mémorisées pour cette tâche**. Les widgets Lattice et l’AFK ne déclenchent pas d’interruption.
 
-L’imputation est **locale** (id de page Notion sur les segments) — pas d’écriture d’une propriété « temps passé » dans Notion en V1.
+**Toujours pour cette tâche** enregistre l’app / domaine / vidéo / projet localement pour cette tâche Notion et le recharge aux prochaines sessions. **Autoriser pour cette session** ne dure que jusqu’à la fin de la session. L’édition manuelle de l’allowlist dans Activité est aussi mémorisée pour la tâche.
+
+L’imputation est **locale** (id de page Notion sur les segments). La fin d’une session focus incrémente aussi la propriété Number **Temps de travail** quand elle est mappée.
 
 ## Limites
 

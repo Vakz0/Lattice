@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { FocusInterruptContext } from '../vite-env'
+import type { FocusInterruptAction, FocusInterruptContext } from '../vite-env'
 import { extractYoutubeVideoId, youtubeTitleAllowlistKey } from '../../shared/youtubeVideo'
 
 export function FocusInterruptWidget() {
@@ -24,9 +24,7 @@ export function FocusInterruptWidget() {
     }
   }, [])
 
-  async function resolve(
-    action: 'resume' | 'allow_once' | 'pause' | 'stop',
-  ) {
+  async function resolve(action: FocusInterruptAction) {
     const trimmed = note.trim()
     if (action !== 'resume' && !trimmed) {
       setError('Indique une raison avant de continuer.')
@@ -96,7 +94,7 @@ export function FocusInterruptWidget() {
           rows={4}
           value={note}
           disabled={busy}
-          placeholder="Justifie brièvement — requis pour autoriser, pause ou terminer…"
+          placeholder="Justifie brièvement — requis sauf pour reprendre…"
           onChange={(e) => {
             setNote(e.target.value)
             if (error) setError(null)
@@ -121,7 +119,18 @@ export function FocusInterruptWidget() {
             title={reasonTitle}
             onClick={() => void resolve('allow_once')}
           >
-            {isYoutubeAllow ? 'Autoriser cette vidéo' : 'Autoriser cette fois'}
+            {isYoutubeAllow ? 'Autoriser cette vidéo (session)' : 'Autoriser pour cette session'}
+          </button>
+          <button
+            type="button"
+            className="activity-btn activity-btn-primary"
+            disabled={busy || !hasReason}
+            title={reasonTitle}
+            onClick={() => void resolve('allow_forever')}
+          >
+            {isYoutubeAllow
+              ? 'Toujours autoriser cette vidéo'
+              : 'Toujours pour cette tâche'}
           </button>
           <button
             type="button"

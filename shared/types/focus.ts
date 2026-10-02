@@ -20,7 +20,12 @@ export interface FocusSession {
   allowlist: FocusAllowlist
 }
 
-export type FocusInterruptAction = 'resume' | 'allow_once' | 'pause' | 'stop'
+export type FocusInterruptAction =
+  | 'resume'
+  | 'allow_once'
+  | 'allow_forever'
+  | 'pause'
+  | 'stop'
 
 export interface FocusJournalEntry {
   ts: string

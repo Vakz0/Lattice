@@ -45,6 +45,18 @@ export function sanitizeFocusAllowlist(raw?: Partial<FocusAllowlist> | null): Fo
   }
 }
 
+/** Fusionne plusieurs allowlists (dédupliquées). */
+export function mergeFocusAllowlists(
+  ...parts: Array<Partial<FocusAllowlist> | null | undefined>
+): FocusAllowlist {
+  return sanitizeFocusAllowlist({
+    apps: parts.flatMap((p) => p?.apps ?? []),
+    domains: parts.flatMap((p) => p?.domains ?? []),
+    ideProjects: parts.flatMap((p) => p?.ideProjects ?? []),
+    urls: parts.flatMap((p) => p?.urls ?? []),
+  })
+}
+
 export function domainMatches(allowed: string[], domain: string | null): boolean {
   if (!domain) return false
   const d = normalizeDomain(domain)

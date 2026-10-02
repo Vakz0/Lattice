@@ -2,6 +2,7 @@ import { BrowserWindow, screen } from 'electron'
 import type { AppConfig, SystemStats } from '../../shared/types'
 import type { WidgetServiceId } from '../../shared/widget'
 import { updateWindowBounds } from '../config'
+import { ensureVisibleBounds } from './displayBounds'
 import { getExternalWidgetPackage } from '../widgets/discoverExternal'
 import { getWidgetDefinitionCached } from '../widgets/registry'
 import {
@@ -59,8 +60,8 @@ export function createWidgetWindowController(deps: CreateWidgetWindowDeps) {
     const display = screen.getPrimaryDisplay().workArea
     const isPopup = def.placement === 'popup'
 
-    const width = isPopup ? def.defaultBounds.width : (saved?.width ?? def.defaultBounds.width)
-    const height = isPopup ? def.defaultBounds.height : (saved?.height ?? def.defaultBounds.height)
+    let width = isPopup ? def.defaultBounds.width : (saved?.width ?? def.defaultBounds.width)
+    let height = isPopup ? def.defaultBounds.height : (saved?.height ?? def.defaultBounds.height)
 
     let x = isPopup ? undefined : saved?.x
     let y = isPopup ? undefined : saved?.y
@@ -82,6 +83,14 @@ export function createWidgetWindowController(deps: CreateWidgetWindowDeps) {
         x = display.x + 40
         y = display.y + 80
       }
+    }
+
+    if (!isPopup && x !== null && x !== undefined && y !== null && y !== undefined) {
+      const visible = ensureVisibleBounds({ x, y, width, height })
+      x = visible.x
+      y = visible.y
+      width = visible.width
+      height = visible.height
     }
 
     const resizable = def.windowOptions?.resizable ?? true
@@ -175,11 +184,52 @@ export function createWidgetWindowController(deps: CreateWidgetWindowDeps) {
     }
   }
 
+  let displayClampTimer: NodeJS.Timeout | null = null
+
+  function clampWindowsToVisibleDisplays(): void {
+    for (const [id, win] of Object.entries(deps.windows)) {
+      if (!win || win.isDestroyed()) continue
+      const def = getWidgetDefinitionCached(id)
+      if (def?.placement === 'popup' && !win.isVisible()) continue
+      const current = win.getBounds()
+      const next = ensureVisibleBounds(current)
+      if (
+        next.x === current.x &&
+        next.y === current.y &&
+        next.width === current.width &&
+        next.height === current.height
+      ) {
+        continue
+      }
+      win.setBounds(next)
+      void updateWindowBounds(deps.getConfig(), id, next).then((cfg) => {
+        deps.setConfig(cfg)
+      })
+    }
+  }
+
+  function scheduleClampWindowsToVisibleDisplays(): void {
+    if (displayClampTimer) clearTimeout(displayClampTimer)
+    displayClampTimer = setTimeout(() => {
+      displayClampTimer = null
+      clampWindowsToVisibleDisplays()
+    }, 250)
+  }
+
+  function setupDisplayListeners(): void {
+    const onDisplayChange = () => {
+      scheduleClampWindowsToVisibleDisplays()
+    }
+    screen.on('display-removed', onDisplayChange)
+    screen.on('display-metrics-changed', onDisplayChange)
+  }
+
   return {
     createWidgetWindow,
     isWidgetVisible,
     showWidget,
     hideWidget,
     clearBoundsTimers,
+    setupDisplayListeners,
   }
 }

@@ -75,6 +75,11 @@ export function focusJournalPath(): string {
   return resolveWithin(activityDir(), 'focus-journal.jsonl')
 }
 
+/** Allowlists persistées par tâche Notion (apps/domaines/projets/urls). */
+export function focusTaskAllowlistsPath(): string {
+  return resolveWithin(activityDir(), 'focus-task-allowlists.json')
+}
+
 export function ensureDirs(): void {
   fs.mkdirSync(daysDir(), { recursive: true })
 }

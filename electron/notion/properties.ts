@@ -22,6 +22,7 @@ export function suggestPropertyMapping(
   const statusProps = byType('status')
   const selects = [...byType('select'), ...byType('multi_select')]
   const checkboxes = byType('checkbox')
+  const numbers = byType('number')
 
   const suggested: Partial<TaskPropertyMapping> = {}
   if (title) suggested.title = title
@@ -31,6 +32,14 @@ export function suggestPropertyMapping(
   if (selects[2]) suggested.urgency = selects[2].name
   if (statusProps[0]) suggested.workflowStatus = statusProps[0].name
   if (checkboxes[0]) suggested.doneCheckbox = checkboxes[0].name
+
+  const hoursHint = /temps|heure|hours|time|work/i
+  const hoursProp =
+    numbers.find((p) => /temps de travail/i.test(p.name)) ??
+    numbers.find((p) => hoursHint.test(p.name)) ??
+    numbers[0]
+  if (hoursProp) suggested.hoursWorked = hoursProp.name
+
   return suggested
 }
 

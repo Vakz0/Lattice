@@ -10,7 +10,7 @@ import type {
   ResolveFocusInterruptPayload,
   StartFocusSessionPayload,
 } from '../../shared/types'
-import { sanitizeFocusAllowlist } from '../activity/focusAllowlist'
+import { sanitizeFocusAllowlist, mergeFocusAllowlists } from '../activity/focusAllowlist'
 import { applyInterruptAction, shouldBeginInterrupt } from './guard'
 import {
   appendFocusJournal,
@@ -20,6 +20,10 @@ import {
   readFocusSessionFile,
   writeFocusSessionFile,
 } from './persist'
+import {
+  getTaskFocusAllowlist,
+  setTaskFocusAllowlist,
+} from './taskAllowlist'
 
 export { clearFocusJournalFile, getFocusJournal, readFocusJournalInRange }
 
@@ -36,12 +40,10 @@ let onChanged: FocusChangedListener | null = null
 let onInterrupt: FocusInterruptListener | null = null
 
 function defaultAllowlist(seed?: Partial<FocusAllowlist>): FocusAllowlist {
-  return sanitizeFocusAllowlist({
-    apps: [...DEFAULT_APPS, ...(seed?.apps ?? [])],
-    domains: [...(seed?.domains ?? [])],
-    ideProjects: [...(seed?.ideProjects ?? [])],
-    urls: [...(seed?.urls ?? [])],
-  })
+  return mergeFocusAllowlists(
+    { apps: DEFAULT_APPS },
+    seed,
+  )
 }
 
 function emitChanged(): void {
@@ -120,6 +122,7 @@ export async function startFocusSession(payload: StartFocusSessionPayload): Prom
   }
   pendingInterrupt = null
   offProjectSinceMs = null
+  const taskAllowlist = await getTaskFocusAllowlist(payload.notionTaskId)
   session = {
     id: randomUUID(),
     notionTaskId: payload.notionTaskId,
@@ -127,7 +130,9 @@ export async function startFocusSession(payload: StartFocusSessionPayload): Prom
     databaseId: payload.databaseId ?? '',
     startedAt: new Date().toISOString(),
     status: 'active',
-    allowlist: defaultAllowlist(payload.seedAllowlist),
+    allowlist: defaultAllowlist(
+      mergeFocusAllowlists(taskAllowlist, payload.seedAllowlist),
+    ),
   }
   await persistSession()
   emitChanged()
@@ -136,12 +141,14 @@ export async function startFocusSession(payload: StartFocusSessionPayload): Prom
 
 export async function stopFocusSession(): Promise<FocusSession | null> {
   await loadPersistedSession()
+  if (!session) return null
+  const stopped = structuredClone(session)
   session = null
   pendingInterrupt = null
   offProjectSinceMs = null
   await persistSession()
   emitChanged()
-  return null
+  return stopped
 }
 
 export async function pauseFocusSession(): Promise<FocusSession | null> {
@@ -178,6 +185,7 @@ export async function updateFocusAllowlist(patch: Partial<FocusAllowlist>): Prom
       urls: patch.urls ?? session.allowlist.urls,
     }),
   }
+  await setTaskFocusAllowlist(session.notionTaskId, session.allowlist)
   await persistSession()
   emitChanged()
   return structuredClone(session)
@@ -251,6 +259,7 @@ export async function resolveFocusInterrupt(payload: ResolveFocusInterruptPayloa
 
   const action: FocusInterruptAction =
     payload.action === 'allow_once' ||
+    payload.action === 'allow_forever' ||
     payload.action === 'pause' ||
     payload.action === 'stop' ||
     payload.action === 'resume'
@@ -292,7 +301,18 @@ export async function resolveFocusInterrupt(payload: ResolveFocusInterruptPayloa
   pendingInterrupt = null
   offProjectSinceMs = null
 
+  if (action === 'stop') {
+    const stopped = structuredClone(session)
+    session = null
+    await persistSession()
+    emitChanged()
+    return { ok: true, session: stopped }
+  }
+
   session = applyInterruptAction(session, action, ctx)
+  if (action === 'allow_forever' && session) {
+    await setTaskFocusAllowlist(session.notionTaskId, session.allowlist)
+  }
   await persistSession()
   emitChanged()
   return { ok: true, session: session ? structuredClone(session) : null }

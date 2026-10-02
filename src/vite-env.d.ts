@@ -6,6 +6,8 @@ import type {
   ActivityExportFormat,
   ActivityRules,
   ActivitySettings,
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   AppUpdateState,
   CatalogWidgetInfo,
   CreateTaskPayload,
@@ -46,6 +48,8 @@ export type {
   ActivityRules,
   ActivitySettings,
   ActivityTaskBreakdown,
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   AppUpdateState,
   CatalogWidgetInfo,
   CreateTaskPayload,
@@ -83,6 +87,7 @@ export interface LatticeApi {
     propertyName: string,
   ) => Promise<NotionPropertyOption[]>
   updateTaskField: (payload: UpdateTaskFieldPayload) => Promise<UpdateTaskFieldResult>
+  addTaskHours: (payload: AddTaskHoursPayload) => Promise<AddTaskHoursResult>
   createTask: (payload: CreateTaskPayload) => Promise<CreateTaskResult>
   deleteTask: (payload: DeleteTaskPayload) => Promise<DeleteTaskResult>
   getStats: () => Promise<SystemStats>

@@ -87,6 +87,13 @@ describe('applyInterruptAction', () => {
     expect(next?.allowlist.domains).toContain('example.com')
   })
 
+  it('allow_forever mirrors allow_once for the session allowlist', () => {
+    const next = applyInterruptAction(session(), 'allow_forever', ctx)
+    expect(next?.status).toBe('active')
+    expect(next?.allowlist.apps).toContain('notepad')
+    expect(next?.allowlist.domains).toContain('example.com')
+  })
+
   it('allow_once does not add whole browser app', () => {
     const next = applyInterruptAction(session(), 'allow_once', { ...ctx, app: 'chrome', domain: null })
     expect(next?.allowlist.apps).not.toContain('chrome')

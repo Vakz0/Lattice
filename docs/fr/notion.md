@@ -14,7 +14,9 @@ Sans token, Lattice tourne en **mode démo** une fois les widgets Notion activé
 
 ## Mapping des propriétés
 
-Les défauts (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`) se renomment dans **Paramètres** ou sous `properties` dans `config.json`. Utiliser **Tester la connexion** pour proposer un mapping.
+Les défauts (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`, `Temps de travail`) se renomment dans **Paramètres** ou sous `properties` dans `config.json`. Utiliser **Tester la connexion** pour proposer un mapping.
+
+La propriété Number **`Temps de travail`** (`hoursWorked`) stocke le total d’heures sur chaque tâche. Lattice l’incrémente quand vous ajoutez des heures à la main dans le détail d’une tâche, et à la fin d’une session **Travailler dessus**.
 
 ## Sources secondaires (optionnel)
 

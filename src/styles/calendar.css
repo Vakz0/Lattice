@@ -399,6 +399,15 @@
   word-break: break-word;
 }
 
+.cal-card-hours {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted, #9b9a97);
+  opacity: 0.9;
+}
+
 .cal-dot {
   display: inline-block;
   width: 7px;

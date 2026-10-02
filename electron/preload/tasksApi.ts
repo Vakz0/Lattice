@@ -1,5 +1,7 @@
 import { ipcRenderer } from 'electron'
 import type {
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   CreateTaskPayload,
   CreateTaskResult,
   DeleteTaskPayload,
@@ -23,6 +25,8 @@ export function createTasksApi() {
       ipcRenderer.invoke('get-property-options', databaseId, propertyName),
     updateTaskField: (payload: UpdateTaskFieldPayload): Promise<UpdateTaskFieldResult> =>
       ipcRenderer.invoke('update-task-field', payload),
+    addTaskHours: (payload: AddTaskHoursPayload): Promise<AddTaskHoursResult> =>
+      ipcRenderer.invoke('add-task-hours', payload),
     createTask: (payload: CreateTaskPayload): Promise<CreateTaskResult> =>
       ipcRenderer.invoke('create-task', payload),
     deleteTask: (payload: DeleteTaskPayload): Promise<DeleteTaskResult> =>

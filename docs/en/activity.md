@@ -74,12 +74,14 @@ Goal: work **only** on a Notion task, time that work, and interrupt when activit
 1. Enable the **Activity** widget (`activity-tracker` service)
 2. From **Tasks** / **Calendar**: context menu or detail → **Work on this**
 3. The **Focus session** banner in Activity shows the task, status (active / paused / interrupted) and allowlist (apps, domains, IDE projects)
-4. Off-allowlist for the configured delay (default **8 s**, `Focus: Ns` option) → interrupt window: explain what you are doing, then resume / allow once / pause / stop
+4. Off-allowlist for the configured delay (default **8 s**, `Focus: Ns` option) → interrupt window: explain what you are doing, then resume / allow for this session / **always for this task** / pause / stop
 5. Notes go to `focus-journal.jsonl`; attributed time appears under **Time by task** and in exports
 
-Initial allowlist: common work apps (`cursor`, `code`, `notion`…) + current focus context (IDE project / domain). Lattice widgets and AFK never trigger an interrupt.
+Initial allowlist: common work apps (`cursor`, `code`, `notion`…) + current focus context (IDE project / domain) + **saved authorizations for this task**. Lattice widgets and AFK never trigger an interrupt.
 
-Attribution is **local** (Notion page id on segments) — no write-back of a “time spent” property to Notion in V1.
+**Always for this task** stores the app / domain / video / project locally for that Notion task and reloads it on later sessions. **Allow for this session** lasts only until the session ends. Manual allowlist edits in Activity are also remembered for the task.
+
+Attribution is **local** (Notion page id on segments). Ending a focus session also increments the mapped **Temps de travail** Number property when configured.
 
 ## Limits
 

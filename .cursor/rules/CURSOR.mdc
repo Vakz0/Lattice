@@ -43,7 +43,7 @@ Prefer `npm test` for focused loops. No ESLint/Prettier — TypeScript `strict` 
 
 - Fresh install is an empty **shell**; widgets are enabled from the Catalog (enabled ≠ tray visible).
 - Activity is **foreground-only**, local under `%APPDATA%\lattice-desk\activity\`.
-- Focus session time is attributed **locally** (Notion page id on segments) — no write-back of “time spent” to Notion in V1.
+- Focus session time is attributed **locally** (Notion page id on segments). Ending a session also increments the mapped Notion Number `hoursWorked` (`Temps de travail`) when configured (see D28).
 - Builtin widgets today: `calendar`, `tasks`, `activity` (+ internal `catalog`, `focus-interrupt`). The old `monitor` widget is gone; `system-stats` / `temp-daemon` remain as service ids for external widgets / tray stats only.
 
 ## Docs map

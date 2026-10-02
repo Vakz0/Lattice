@@ -35,6 +35,7 @@ import { createWidgetWindowController } from './windows/createWidgetWindow'
 import { toPublicConfig } from './bootstrap/publicConfig'
 import { createRefreshControllers } from './bootstrap/refresh'
 import { createTrayIcon, updateTrayTooltip } from './bootstrap/tray'
+import { showUpcomingTasksDigest } from './taskReminders'
 import type { AppConfig, NotionTask, SystemStats } from '../shared/types'
 
 // Lower Chromium cost for mostly-static widgets
@@ -47,6 +48,10 @@ let tray: Tray | null = null
 let tasksCache: NotionTask[] = []
 let statsCache: SystemStats | null = null
 let sleeping = false
+let taskReminderTimer: NodeJS.Timeout | null = null
+let taskRemindersStarted = false
+
+const TASK_REMINDER_INTERVAL_MS = 3 * 60 * 60 * 1000
 
 const windows: Partial<Record<string, BrowserWindow>> = {}
 
@@ -127,6 +132,29 @@ const lifecycle = createWidgetLifecycle({
 })
 
 let trayMenu: ReturnType<typeof createTrayMenuController> | null = null
+
+function maybeShowTaskReminders(force = false): void {
+  if (!hasService('notion')) return
+  if (!force && (powerRef.current?.getPowerMode() ?? 'active') === 'sleep') return
+  showUpcomingTasksDigest(tasksCache)
+}
+
+function startTaskReminders(): void {
+  if (taskRemindersStarted) return
+  taskRemindersStarted = true
+  maybeShowTaskReminders(true)
+  taskReminderTimer = setInterval(() => {
+    maybeShowTaskReminders(false)
+  }, TASK_REMINDER_INTERVAL_MS)
+}
+
+function stopTaskReminders(): void {
+  taskRemindersStarted = false
+  if (taskReminderTimer) {
+    clearInterval(taskReminderTimer)
+    taskReminderTimer = null
+  }
+}
 
 function setupTray(): void {
   tray = new Tray(createTrayIcon())
@@ -243,13 +271,16 @@ app.whenReady().then(async () => {
   })
 
   await lifecycle.bootEnabledWidgets()
+  widgetWindows.setupDisplayListeners()
   lifecycle.syncActivityService()
 
   void getSystemStats({ includeTemp: false }).then(() => {
     void refreshStats(false)
   })
   if (hasService('notion')) {
-    void refreshNotion(true)
+    void refreshNotion(true).then(() => {
+      startTaskReminders()
+    })
   }
 
   power.setPowerMode(power.computePowerMode())
@@ -272,6 +303,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   power.clearTimers()
   power.clearPowerTimer()
+  stopTaskReminders()
   widgetWindows.clearBoundsTimers()
   if (isActivityTrackerRunning()) stopActivityTracker()
 })

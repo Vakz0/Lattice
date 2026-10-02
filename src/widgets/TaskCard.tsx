@@ -1,6 +1,7 @@
 import { useRef, type DragEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import type { NotionTask } from '../vite-env'
 import { Pill } from './Pill'
+import { formatHours } from './formatHours'
 
 type TaskCardProps = {
   task: NotionTask
@@ -76,6 +77,9 @@ export function TaskCard({
         {task.title}
       </span>
       {task.tag ? <Pill label={task.tag} color={task.tagColor ?? '#c4a484'} size="sm" /> : null}
+      {task.hoursWorked != null && task.hoursWorked > 0 ? (
+        <span className="cal-card-hours">{formatHours(task.hoursWorked)}</span>
+      ) : null}
       {children}
     </button>
   )

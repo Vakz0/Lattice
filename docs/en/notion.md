@@ -14,7 +14,9 @@ Without a token, Lattice runs in **demo mode** once Notion widgets are enabled.
 
 ## Property mapping
 
-Defaults (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`) can be renamed in **Paramètres** or under `properties` in `config.json`. Use **Tester la connexion** to auto-suggest from your schema.
+Defaults (`Name`, `Date`, `Tags`, `Priority`, `Urgency`, `Done`, `Temps de travail`) can be renamed in **Paramètres** or under `properties` in `config.json`. Use **Tester la connexion** to auto-suggest from your schema.
+
+The Number property **`Temps de travail`** (`hoursWorked`) stores total hours on each task. Lattice increments it when you add hours manually in the task detail panel, and when you end a **Travailler dessus** focus session.
 
 ## Secondary sources (optional)
 

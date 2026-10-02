@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { getActivityFocusSeed, refreshActivitySummary } from '../activity'
+import { mergeFocusAllowlists } from '../activity/focusAllowlist'
 import {
   ensureFocusSessionLoaded,
   getFocusJournal,
@@ -12,12 +13,30 @@ import {
   stopFocusSession,
   updateFocusAllowlist,
 } from '../focus'
+import { syncFocusSessionHours } from '../focus/syncHours'
 import type {
   FocusAllowlist,
+  FocusSession,
   ResolveFocusInterruptPayload,
   StartFocusSessionPayload,
 } from '../../shared/types'
 import type { IpcDeps } from './types'
+
+function maybeSyncFocusHours(deps: IpcDeps, session: FocusSession | null): void {
+  if (!session || !deps.hasService('notion')) return
+  void syncFocusSessionHours({
+    config: deps.getConfig(),
+    session,
+    getTasksCache: deps.getTasksCache,
+    refreshNotion: deps.refreshNotion,
+    setTasksCache: deps.setTasksCache,
+    sendTasksUpdated: (tasks) => {
+      deps.sendTo(deps.notionWidgetIds(), 'tasks-updated', tasks)
+    },
+  }).catch((err) => {
+    console.error('Failed to sync focus hours to Notion', err)
+  })
+}
 
 export function registerFocusIpc(deps: IpcDeps): void {
   ipcMain.handle('start-focus-session', async (_e, payload: StartFocusSessionPayload) => {
@@ -27,14 +46,7 @@ export function registerFocusIpc(deps: IpcDeps): void {
     const seed = getActivityFocusSeed()
     const result = await startFocusSession({
       ...payload,
-      seedAllowlist: {
-        apps: [...seed.apps, ...(payload?.seedAllowlist?.apps ?? [])],
-        domains: [...seed.domains, ...(payload?.seedAllowlist?.domains ?? [])],
-        ideProjects: [
-          ...seed.ideProjects,
-          ...(payload?.seedAllowlist?.ideProjects ?? []),
-        ],
-      },
+      seedAllowlist: mergeFocusAllowlists(seed, payload?.seedAllowlist),
     })
     if (result.ok) refreshActivitySummary()
     return result
@@ -43,6 +55,7 @@ export function registerFocusIpc(deps: IpcDeps): void {
     const session = await stopFocusSession()
     deps.hideFocusInterruptWindow()
     refreshActivitySummary()
+    maybeSyncFocusHours(deps, session)
     return session
   })
   ipcMain.handle('pause-focus-session', async () => {
@@ -72,6 +85,9 @@ export function registerFocusIpc(deps: IpcDeps): void {
       if (result.ok) {
         deps.hideFocusInterruptWindow()
         refreshActivitySummary()
+        if (payload?.action === 'stop') {
+          maybeSyncFocusHours(deps, result.session)
+        }
       }
       return result
     },

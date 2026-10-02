@@ -17,6 +17,8 @@ export type {
   NotionPropertyOption,
   UpdateTaskFieldPayload,
   UpdateTaskFieldResult,
+  AddTaskHoursPayload,
+  AddTaskHoursResult,
   CreateTaskPayload,
   CreateTaskResult,
   DeleteTaskPayload,

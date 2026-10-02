@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import type { ActivityCategory } from '../vite-env'
 import { ActivityCategoryRing } from './activity/ActivityCategoryRing'
 import { ActivityFocusJournal } from './activity/ActivityFocusJournal'
 import { ActivityFocusPanel } from './activity/ActivityFocusPanel'
@@ -61,6 +63,8 @@ export function ActivityWidget() {
     saveAllowlist,
   } = useActivityWidget()
 
+  const [categoryFilter, setCategoryFilter] = useState<ActivityCategory | null>(null)
+
   const manualAfk = settings?.manualAfk ?? data.manualAfk ?? false
 
   function openOptions() {
@@ -72,6 +76,16 @@ export function ActivityWidget() {
     setOptionsOpen(false)
     setConfirmClear(false)
   }
+
+  function changeDay(delta: number) {
+    setCategoryFilter(null)
+    void goDay(delta)
+  }
+
+  const filterLabel =
+    categoryFilter != null
+      ? (categoryMeta.labels[categoryFilter] ?? categoryFilter)
+      : null
 
   return (
     <div className="widget-shell activity-shell drag-region">
@@ -86,7 +100,7 @@ export function ActivityWidget() {
                 className="activity-day-nav no-drag"
                 disabled={busy}
                 aria-label="Jour précédent"
-                onClick={() => void goDay(-1)}
+                onClick={() => changeDay(-1)}
               >
                 ‹
               </button>
@@ -96,7 +110,7 @@ export function ActivityWidget() {
                 className="activity-day-nav no-drag"
                 disabled={busy || isToday || viewDate >= todayKey()}
                 aria-label="Jour suivant"
-                onClick={() => void goDay(1)}
+                onClick={() => changeDay(1)}
               >
                 ›
               </button>
@@ -180,6 +194,10 @@ export function ActivityWidget() {
                 categoryRows={categoryRows}
                 activeMs={activeMs}
                 categoryMeta={categoryMeta}
+                selectedCategory={categoryFilter}
+                onSelectCategory={(id) =>
+                  setCategoryFilter(id as ActivityCategory | null)
+                }
               />
             </section>
 
@@ -211,11 +229,27 @@ export function ActivityWidget() {
               />
             ) : null}
 
+            {filterLabel ? (
+              <div className="activity-category-filter" role="status">
+                <span>
+                  Filtre : <strong>{filterLabel}</strong>
+                </span>
+                <button
+                  type="button"
+                  className="activity-category-filter-clear"
+                  onClick={() => setCategoryFilter(null)}
+                >
+                  Tout afficher
+                </button>
+              </div>
+            ) : null}
+
             <ActivityTopLists
               data={data}
               busy={busy}
               categoryMeta={categoryMeta}
               categoryOptions={categoryOptions}
+              categoryFilter={categoryFilter}
               onCorrect={correct}
               onMenuOpenChange={setCategoryMenuOpen}
             />

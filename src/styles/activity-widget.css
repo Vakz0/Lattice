@@ -263,6 +263,30 @@
   gap: 8px;
   align-items: center;
   font-size: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.activity-ring-legend-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-subtle);
+}
+
+button.activity-ring-legend-row.is-selected {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-subtle);
+}
+
+button.activity-ring-legend-row.is-dimmed {
+  opacity: 0.42;
 }
 
 .activity-ring-legend-row.is-afk {
@@ -270,6 +294,7 @@
   margin-top: 2px;
   padding-top: 4px;
   border-top: 1px dashed var(--border-subtle);
+  cursor: default;
 }
 
 .activity-ring-legend-label {
@@ -284,6 +309,37 @@
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   font-size: 11px;
+}
+
+.activity-category-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  font-size: 12px;
+  color: var(--text-62);
+}
+
+.activity-category-filter-clear {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.activity-category-filter-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .activity-cat-dot {

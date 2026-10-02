@@ -2,6 +2,7 @@
  * Pure focus-guard decisions (no I/O).
  */
 import type {
+  FocusAllowlist,
   FocusInterruptAction,
   FocusInterruptContext,
   FocusSession,
@@ -65,6 +66,39 @@ export function shouldBeginInterrupt(
   return { begin: true, nextOffSince: offSince }
 }
 
+/** Expand allowlist from an interrupt context (session-only or forever share this). */
+export function expandAllowlistFromInterrupt(
+  current: FocusAllowlist,
+  ctx: FocusInterruptContext,
+): FocusAllowlist {
+  const apps = [...current.apps]
+  const domains = [...current.domains]
+  const ideProjects = [...current.ideProjects]
+  const urls = [...current.urls]
+  const urlKeys = allowOnceUrlKeys({
+    domain: ctx.domain,
+    urlPath: ctx.urlPath,
+    title: ctx.title,
+  })
+  if (urlKeys.length > 0) {
+    urls.push(...urlKeys)
+  } else {
+    const appKey = normalizeAppKey(ctx.app)
+    // Never add the whole browser — that would allow all browsing.
+    if (appKey && appKey !== 'unknown' && !isBrowserApp(appKey)) {
+      apps.push(appKey)
+    }
+    // Never widen YouTube to the whole domain when we could not lock a video/title.
+    if (ctx.domain && !isYoutubeHost(ctx.domain)) {
+      domains.push(normalizeDomain(ctx.domain))
+    }
+    if (ctx.projectName) {
+      ideProjects.push(normalizeProject(ctx.projectName))
+    }
+  }
+  return sanitizeFocusAllowlist({ apps, domains, ideProjects, urls })
+}
+
 export function applyInterruptAction(
   current: FocusSession,
   action: FocusInterruptAction,
@@ -78,36 +112,11 @@ export function applyInterruptAction(
     return { ...current, status: 'paused' }
   }
 
-  if (action === 'allow_once') {
-    const apps = [...current.allowlist.apps]
-    const domains = [...current.allowlist.domains]
-    const ideProjects = [...current.allowlist.ideProjects]
-    const urls = [...current.allowlist.urls]
-    const urlKeys = allowOnceUrlKeys({
-      domain: ctx.domain,
-      urlPath: ctx.urlPath,
-      title: ctx.title,
-    })
-    if (urlKeys.length > 0) {
-      urls.push(...urlKeys)
-    } else {
-      const appKey = normalizeAppKey(ctx.app)
-      // Never add the whole browser — that would allow all browsing.
-      if (appKey && appKey !== 'unknown' && !isBrowserApp(appKey)) {
-        apps.push(appKey)
-      }
-      // Never widen YouTube to the whole domain when we could not lock a video/title.
-      if (ctx.domain && !isYoutubeHost(ctx.domain)) {
-        domains.push(normalizeDomain(ctx.domain))
-      }
-      if (ctx.projectName) {
-        ideProjects.push(normalizeProject(ctx.projectName))
-      }
-    }
+  if (action === 'allow_once' || action === 'allow_forever') {
     return {
       ...current,
       status: 'active',
-      allowlist: sanitizeFocusAllowlist({ apps, domains, ideProjects, urls }),
+      allowlist: expandAllowlistFromInterrupt(current.allowlist, ctx),
     }
   }
 

@@ -7,6 +7,23 @@ type ActivityFocusJournalProps = {
 export function ActivityFocusJournal({ journal }: ActivityFocusJournalProps) {
   if (journal.length === 0) return null
 
+  function actionLabel(action: FocusJournalEntry['action']): string {
+    switch (action) {
+      case 'allow_once':
+        return 'session'
+      case 'allow_forever':
+        return 'toujours'
+      case 'resume':
+        return 'reprise'
+      case 'pause':
+        return 'pause'
+      case 'stop':
+        return 'fin'
+      default:
+        return action
+    }
+  }
+
   return (
     <section className="activity-apps" aria-label="Journal focus">
       <div className="activity-section-title">Journal focus</div>
@@ -22,7 +39,7 @@ export function ActivityFocusJournal({ journal }: ActivityFocusJournalProps) {
               </span>
               <span>{entry.app}</span>
               {entry.domain ? <span>{entry.domain}</span> : null}
-              <span className="activity-journal-action">{entry.action}</span>
+              <span className="activity-journal-action">{actionLabel(entry.action)}</span>
             </div>
             {entry.note ? (
               <div className="activity-journal-note">{entry.note}</div>
