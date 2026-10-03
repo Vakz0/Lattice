@@ -81,11 +81,13 @@ export function classify(
         }
       }
     }
+    // Default: divertissement (comme Netflix etc.). Une règle titre peut reclasser
+    // un cours / tuto en études ou travail.
     return {
-      category: 'other',
-      source: 'fallback',
-      matchedPattern: null,
-      confidence: 'low',
+      category: 'entertainment',
+      source: 'domain',
+      matchedPattern: domain,
+      confidence: 'medium',
     }
   }
 

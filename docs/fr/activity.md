@@ -137,7 +137,7 @@ Contexte :
 ### Classification
 
 1. idle → AFK  
-2. **navigateur + domaine** → règles domaine (`userDomainOverrides` puis table : `youtube.com` → divertissement, `github.com` → travail, `khanacademy.org` → études, `*.edu` → études, …) — prioritaire sur un override d’app Brave/Chrome  
+2. **navigateur + domaine** → règles domaine (`userDomainOverrides` puis table : `youtube.com` → divertissement, `github.com` → travail, `khanacademy.org` → études, `*.edu` → études, …) — prioritaire sur un override d’app Brave/Chrome. **YouTube** : motifs titre d’abord (un cours peut être « études ») ; sans motif → divertissement (plus le seau opaque « Autre »).
 3. `userAppOverrides` (apps hors navigateur, ou navigateur sans domaine)  
 4. **domaine** (contextes hors navigateur)  
 5. motifs titre  

@@ -46,7 +46,7 @@ describe('classify', () => {
     expect(r.source).toBe('user')
   })
 
-  it('classifies YouTube per video title, not as one entertainment domain', () => {
+  it('classifies YouTube per video title, defaulting to entertainment', () => {
     const unmarked = classify(
       'chrome',
       'Some lecture - YouTube',
@@ -55,8 +55,8 @@ describe('classify', () => {
       DEFAULT_RULES,
       compiled,
     )
-    expect(unmarked.category).toBe('other')
-    expect(unmarked.source).toBe('fallback')
+    expect(unmarked.category).toBe('entertainment')
+    expect(unmarked.source).toBe('domain')
 
     const rules = {
       ...DEFAULT_RULES,

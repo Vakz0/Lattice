@@ -40,7 +40,10 @@ export function ActivityTopLists({
 }: ActivityTopListsProps) {
   const topTasks = data.topTasks ?? []
   const topApps = categoryFilter
-    ? data.topApps.filter((row) => row.category === categoryFilter)
+    ? data.topApps.filter(
+        // Navigateurs : temps cumulatif (sites inclus) — hors filtre catégorie.
+        (row) => row.showCategory !== false && row.category === categoryFilter,
+      )
     : data.topApps
   const topSites = categoryFilter
     ? data.topSites.filter((row) => row.category === categoryFilter)

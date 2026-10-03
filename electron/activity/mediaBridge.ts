@@ -267,7 +267,7 @@ export function getTopWatch(
     rows.push({
       domain: 'youtube.com',
       ms: youtubeMs.ms,
-      category: 'other',
+      category: 'entertainment',
       label: 'youtube',
       showCategory: false,
     })

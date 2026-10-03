@@ -232,13 +232,17 @@ export function buildSummary(
         const bucket = 'youtube.com'
         const prev = siteMs.get(bucket) ?? {
           ms: 0,
-          category: 'other',
+          category: eff.category,
           label: 'youtube',
           showCategory: false,
         }
         prev.ms += ms
         prev.label = 'youtube'
         prev.showCategory = false
+        // Keep a title-rule category if we already have one; otherwise follow latest.
+        if (eff.source === 'title' || prev.category === 'entertainment') {
+          prev.category = eff.category
+        }
         siteMs.set(bucket, prev)
       } else {
         const prev = siteMs.get(seg.domain) ?? {

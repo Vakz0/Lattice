@@ -137,7 +137,7 @@ Context:
 ### Classification
 
 1. idle → AFK  
-2. **browser + domain** → domain rules (`userDomainOverrides` then built-in: `youtube.com` → entertainment, `github.com` → work, `khanacademy.org` → studies, `*.edu` → studies, …) — wins over a Brave/Chrome app override  
+2. **browser + domain** → domain rules (`userDomainOverrides` then built-in: `youtube.com` → entertainment, `github.com` → work, `khanacademy.org` → studies, `*.edu` → studies, …) — wins over a Brave/Chrome app override. **YouTube** is special: title patterns run first (so one video can be studies/work); unmarked videos default to entertainment (not a single opaque “other” bucket).
 3. `userAppOverrides` (non-browser apps, or browsers with no domain)  
 4. **domain** (non-browser contexts)  
 5. title patterns  

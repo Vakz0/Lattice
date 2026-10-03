@@ -87,10 +87,12 @@ describe('buildSummary', () => {
       }),
     ]
     const summary = buildSummary('2026-07-31', segments, null, deps)
-    expect(summary.byCategory.other).toBe(120_000)
+    expect(summary.byCategory.entertainment).toBe(60_000)
+    expect(summary.byCategory.other).toBe(60_000)
     expect(summary.topSites[0]).toMatchObject({
       domain: 'youtube.com',
       label: 'youtube',
+      category: 'entertainment',
       ms: 60_000,
       showCategory: false,
     })
