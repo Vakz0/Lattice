@@ -28,6 +28,19 @@ function formatUpdaterError(err: unknown): string {
   return message || 'Erreur de mise à jour'
 }
 
+/**
+ * Packaged builds embed `releaseType: draft` from electron-builder publish config
+ * (needed so CI can upload to a draft without races). Force public releases for
+ * end-users — drafts are invisible without a GitHub token.
+ */
+function ensurePublicGithubFeed(): void {
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'Vakz0',
+    repo: 'Lattice',
+  })
+}
+
 function setState(next: AppUpdateState): void {
   state = next
   broadcastToAllWindows('app-update-status', state)
@@ -102,6 +115,7 @@ function wireEvents(): void {
 
 export function initAppUpdater(next: AppUpdaterDeps): void {
   deps = next
+  ensurePublicGithubFeed()
   wireEvents()
   applyAutoDownload(next.getAutoDownload())
 }
@@ -130,6 +144,7 @@ export async function checkForAppUpdates(opts?: {
   }
 
   applyAutoDownload(Boolean(deps?.getAutoDownload()))
+  ensurePublicGithubFeed()
   wireEvents()
   deps?.markChecked()
 
